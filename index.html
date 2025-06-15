@@ -66,7 +66,8 @@
             
             <div class="gps-container">
                 <div class="mini-map">
-                    <canvas id="gps-map" width="350" height="350"></canvas>
+                    <div id="google-map"></div>
+                    <canvas id="gps-overlay" width="350" height="350"></canvas>
                 </div>
                 
                 <div class="distance-display">
@@ -122,5 +123,7 @@
     </audio>
 
     <script src="script.js"></script>
+    <!-- Replace YOUR_API_KEY with your actual Google Maps API key -->
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&callback=initMap"></script>
 </body>
 </html>
