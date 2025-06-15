@@ -721,8 +721,8 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         const targetLat = this.targetLocation ? this.targetLocation.lat : 49.1244;
         const targetLng = this.targetLocation ? this.targetLocation.lng : 8.5985;
         
-        // Create bounding box around the target location
-        const padding = 0.01; // Adjust zoom level
+        // Create bounding box around the target location with more zoom
+        const padding = 0.005; // Smaller padding for more zoom
         const bbox = [
             targetLng - padding,
             targetLat - padding,
@@ -731,7 +731,15 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         ].join(',');
         
         this.googleMap.innerHTML = `
-            <div style="position: relative; width: 100%; height: 100%;">
+            <div style="
+                position: absolute; 
+                top: 0; 
+                left: 0; 
+                width: 100%; 
+                height: 100%; 
+                border-radius: 8px; 
+                overflow: hidden;
+            ">
                 <iframe 
                     width="100%" 
                     height="100%" 
@@ -740,21 +748,54 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                     marginheight="0" 
                     marginwidth="0" 
                     src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${targetLat},${targetLng}"
-                    style="border-radius: 8px;">
+                    style="
+                        position: absolute;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        border: none;
+                        border-radius: 8px;
+                    ">
                 </iframe>
+                
+                <!-- Target Location Marker -->
+                <div id="target-marker" style="
+                    position: absolute; 
+                    top: 50%; 
+                    left: 50%; 
+                    transform: translate(-50%, -100%);
+                    z-index: 10;
+                    font-size: 24px;
+                    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.7));
+                ">🎯</div>
+                
+                <!-- Player Location Marker (will be positioned dynamically) -->
+                <div id="player-marker" style="
+                    position: absolute; 
+                    z-index: 10;
+                    font-size: 20px;
+                    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.7));
+                    display: none;
+                ">📍</div>
+                
+                <!-- Info Panel -->
                 <div id="fallback-info" style="
                     position: absolute; 
-                    top: 10px; 
-                    left: 10px; 
-                    background: rgba(0,0,0,0.7); 
+                    top: 8px; 
+                    left: 8px; 
+                    background: rgba(0,0,0,0.8); 
                     color: white; 
-                    padding: 8px; 
-                    border-radius: 4px; 
-                    font-size: 12px;
-                    max-width: 200px;
+                    padding: 8px 12px; 
+                    border-radius: 6px; 
+                    font-size: 11px;
+                    font-family: 'Press Start 2P', monospace;
+                    max-width: 180px;
+                    border: 2px solid #daa520;
+                    z-index: 15;
                 ">
-                    📍 Target: ${targetLat.toFixed(4)}, ${targetLng.toFixed(4)}<br>
-                    📍 Your location updates below
+                    🎯 Target Location<br>
+                    📍 Finding your location...
                 </div>
             </div>
         `;
@@ -765,7 +806,9 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
 
     updateFallbackMapInfo() {
         const infoDiv = document.getElementById('fallback-info');
-        if (infoDiv && this.userLocation && this.targetLocation) {
+        const playerMarker = document.getElementById('player-marker');
+        
+        if (this.userLocation && this.targetLocation) {
             const distance = this.calculateDistance(
                 this.userLocation.lat,
                 this.userLocation.lng,
@@ -773,12 +816,77 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                 this.targetLocation.lng
             );
             
+            // Update info panel
+            if (infoDiv) {
+                infoDiv.innerHTML = `
+                    🎯 Target Found<br>
+                    📍 You: ${distance.toFixed(0)}m away<br>
+                    ${distance <= 50 ? '✅ Close enough!' : '🚶 Keep walking...'}
+                `;
+            }
+            
+            // Calculate player marker position relative to target
+            if (playerMarker) {
+                // Simple approximation for marker positioning
+                const latDiff = this.userLocation.lat - this.targetLocation.lat;
+                const lngDiff = this.userLocation.lng - this.targetLocation.lng;
+                
+                // Convert to pixel offset (rough approximation)
+                const pixelsPerDegree = 400 / 0.01; // 400px for 0.01 degree range
+                const offsetX = lngDiff * pixelsPerDegree;
+                const offsetY = -latDiff * pixelsPerDegree; // Negative because map coordinates are inverted
+                
+                // Position relative to center (where target is)
+                const centerX = 200; // 400px / 2
+                const centerY = 200; // 400px / 2
+                
+                const playerX = centerX + offsetX;
+                const playerY = centerY + offsetY;
+                
+                // Only show marker if player is within the visible map bounds
+                if (playerX >= 0 && playerX <= 400 && playerY >= 0 && playerY <= 400) {
+                    playerMarker.style.left = `${playerX}px`;
+                    playerMarker.style.top = `${playerY}px`;
+                    playerMarker.style.transform = 'translate(-50%, -100%)';
+                    playerMarker.style.display = 'block';
+                } else {
+                    // Show arrow pointing to player direction if they're off-map
+                    playerMarker.style.display = 'none';
+                    
+                    // Add direction indicator to info panel
+                    const bearing = this.calculateBearing(
+                        this.targetLocation.lat,
+                        this.targetLocation.lng,
+                        this.userLocation.lat,
+                        this.userLocation.lng
+                    );
+                    const direction = this.getDirectionFromBearing(bearing);
+                    
+                    if (infoDiv) {
+                        infoDiv.innerHTML += `<br>🧭 You are ${direction}`;
+                    }
+                }
+            }
+        } else if (infoDiv) {
             infoDiv.innerHTML = `
-                📍 Target: ${this.targetLocation.lat.toFixed(4)}, ${this.targetLocation.lng.toFixed(4)}<br>
-                📍 You: ${this.userLocation.lat.toFixed(4)}, ${this.userLocation.lng.toFixed(4)}<br>
-                📏 Distance: ${distance.toFixed(0)}m
+                🎯 Target Location<br>
+                📍 Finding your location...
             `;
         }
+    }
+    
+    getDirectionFromBearing(bearing) {
+        const degrees = bearing * 180 / Math.PI;
+        const normalizedDegrees = (degrees + 360) % 360;
+        
+        if (normalizedDegrees < 22.5 || normalizedDegrees >= 337.5) return 'North';
+        if (normalizedDegrees < 67.5) return 'Northeast';
+        if (normalizedDegrees < 112.5) return 'East';
+        if (normalizedDegrees < 157.5) return 'Southeast';
+        if (normalizedDegrees < 202.5) return 'South';
+        if (normalizedDegrees < 247.5) return 'Southwest';
+        if (normalizedDegrees < 292.5) return 'West';
+        return 'Northwest';
     }
 
     updateGPSMap() {
