@@ -61,24 +61,33 @@
         <div id="gps-screen" class="screen">
             <div class="gps-header">
                 <h2>GPS CHALLENGE</h2>
-                <div class="pixel-character pulse">📍</div>
+                <div class="pixel-character pulse">🚶</div>
             </div>
             
             <div class="gps-container">
-                <div class="mini-map">
-                    <div id="google-map"></div>
-                    <canvas id="gps-overlay" width="350" height="350"></canvas>
+                <div class="location-hint">
+                    <p id="location-hint">Walk to the location from the previous question!</p>
                 </div>
                 
                 <div class="distance-display">
-                    <p id="distance-text">Calculating distance...</p>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="progress-fill"></div>
+                    <p id="distance-text">📍 Finding your location...</p>
+                    
+                    <div class="distance-bar-container">
+                        <div class="distance-bar-label">Distance Progress</div>
+                        <div class="distance-bar">
+                            <div class="distance-bar-fill" id="distance-bar-fill"></div>
+                            <div class="distance-bar-text" id="distance-bar-text">0%</div>
+                        </div>
+                        <div class="distance-bar-info">
+                            <span>🎯 Target</span>
+                            <span id="distance-meters">--- m</span>
+                            <span>📍 You</span>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="location-hint">
-                    <p id="location-hint">Go to the location from the previous question!</p>
+                <div class="gps-status">
+                    <p id="gps-status-text">🚶 Start walking towards the target location</p>
                 </div>
             </div>
             

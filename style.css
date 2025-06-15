@@ -352,6 +352,7 @@ body {
     font-size: 2rem;
     color: #f39c12;
     margin-bottom: 20px;
+    text-shadow: 2px 2px 0px #8b4513;
 }
 
 .gps-container {
@@ -360,74 +361,108 @@ body {
     text-align: center;
 }
 
-.mini-map {
-    width: 400px;
-    height: 400px;
-    margin: 0 auto 30px;
-    position: relative;
-    border: 4px solid #daa520;
-    background: #2c3e50;
-    border-radius: 12px;
-    box-shadow: 
-        inset 0 0 15px rgba(0,0,0,0.7),
-        0 0 20px rgba(218, 165, 32, 0.4);
-    overflow: hidden;
+.location-hint {
+    margin-bottom: 40px;
 }
 
-#google-map {
-    width: 100%;
-    height: 100%;
+.location-hint p {
+    font-size: 1.1rem;
+    color: #f5f5dc;
+    background: linear-gradient(45deg, rgba(139, 69, 19, 0.8), rgba(160, 82, 45, 0.8));
+    padding: 20px;
+    border: 3px solid #daa520;
     border-radius: 8px;
-    position: absolute;
-    top: 0;
-    left: 0;
-    background: #2c3e50;
-}
-
-#gps-overlay {
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-    border-radius: 8px;
-    z-index: 10;
+    text-shadow: 1px 1px 0px #8b4513;
+    box-shadow: 0 0 15px rgba(218, 165, 32, 0.4);
 }
 
 .distance-display {
     margin: 30px 0;
 }
 
-#distance-text {
-    font-size: 1.1rem;
+.distance-display p {
+    font-size: 1.2rem;
     margin-bottom: 20px;
-    color: #ecf0f1;
+    color: #ffd700;
+    text-shadow: 1px 1px 0px #8b4513;
 }
 
-.progress-bar {
-    width: 100%;
-    height: 20px;
-    background: #2c3e50;
-    border: 2px solid #ecf0f1;
-    overflow: hidden;
+.distance-bar-container {
+    background: linear-gradient(45deg, rgba(139, 69, 19, 0.9), rgba(160, 82, 45, 0.9));
+    padding: 25px;
+    border: 4px solid #daa520;
+    border-radius: 12px;
+    box-shadow: 0 0 20px rgba(218, 165, 32, 0.5);
 }
 
-.progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #e74c3c, #f39c12, #27ae60);
-    width: 0%;
-    transition: width 0.5s ease;
-}
-
-.location-hint {
-    margin-top: 30px;
-    padding: 20px;
-    background: rgba(52, 152, 219, 0.2);
-    border: 2px solid #3498db;
+.distance-bar-label {
+    color: #ffd700;
     font-size: 0.9rem;
-    line-height: 1.6;
+    margin-bottom: 15px;
+    text-shadow: 1px 1px 0px #8b4513;
 }
+
+.distance-bar {
+    position: relative;
+    width: 100%;
+    height: 40px;
+    background: #2c3e50;
+    border: 3px solid #34495e;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
+}
+
+.distance-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #e74c3c, #f39c12, #27ae60);
+    border-radius: 17px;
+    transition: width 0.5s ease;
+    position: relative;
+    animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 5px rgba(231, 76, 60, 0.5); }
+    50% { box-shadow: 0 0 20px rgba(231, 76, 60, 0.8); }
+}
+
+.distance-bar-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #f5f5dc;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    z-index: 10;
+}
+
+.distance-bar-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+    font-size: 0.8rem;
+    color: #f5f5dc;
+    text-shadow: 1px 1px 0px #8b4513;
+}
+
+.gps-status {
+    margin-top: 30px;
+}
+
+.gps-status p {
+    font-size: 1rem;
+    color: #f39c12;
+    background: rgba(243, 156, 18, 0.2);
+    padding: 15px;
+    border: 2px solid #f39c12;
+    border-radius: 8px;
+    text-shadow: 1px 1px 0px #8b4513;
+}
+
 
 /* Game Over & Victory Screens */
 .game-over-content, .victory-content {
@@ -512,14 +547,8 @@ body {
         font-size: 0.8rem;
     }
     
-    .mini-map {
-        width: 300px;
-        height: 300px;
-    }
-    
-    #gps-map {
-        width: 300px;
-        height: 300px;
+    .distance-bar-container {
+        padding: 20px;
     }
 }
 
@@ -543,13 +572,11 @@ body {
         padding: 12px;
     }
     
-    .mini-map {
-        width: 280px;
-        height: 280px;
+    .distance-bar-container {
+        padding: 15px;
     }
     
-    #gps-map {
-        width: 280px;
-        height: 280px;
+    .distance-bar {
+        height: 35px;
     }
 }

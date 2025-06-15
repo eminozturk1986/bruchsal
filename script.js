@@ -47,14 +47,11 @@ class BruchsalQuest {
 
         // GPS elements
         this.distanceText = document.getElementById('distance-text');
-        this.progressFill = document.getElementById('progress-fill');
         this.locationHint = document.getElementById('location-hint');
-        this.googleMap = document.getElementById('google-map');
-        
-        // Google Maps
-        this.map = null;
-        this.playerMarker = null;
-        this.targetMarker = null;
+        this.distanceBarFill = document.getElementById('distance-bar-fill');
+        this.distanceBarText = document.getElementById('distance-bar-text');
+        this.distanceMeters = document.getElementById('distance-meters');
+        this.gpsStatusText = document.getElementById('gps-status-text');
 
         // Game over elements
         this.gameOverTitle = document.getElementById('game-over-title');
@@ -264,9 +261,9 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             lng: this.currentQuestion.longitude
         };
         
-        this.locationHint.textContent = `Go to the location from the previous question: ${this.currentQuestion.question.split('?')[0]}?`;
+        this.locationHint.textContent = `Walk to the location from the previous question: ${this.currentQuestion.question.split('?')[0]}?`;
         this.showScreen('gps');
-        this.initGPSMap();
+        this.resetDistanceBar();
         this.startLocationTracking();
     }
 
@@ -282,7 +279,8 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                 }
             );
         } else {
-            this.distanceText.textContent = 'Geolocation not supported. Click SKIP to continue.';
+            this.distanceText.textContent = '📍 Geolocation not supported';
+            this.gpsStatusText.textContent = '❌ GPS not available. Click SKIP to continue.';
         }
     }
 
@@ -299,14 +297,7 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             this.targetLocation.lng
         );
 
-        this.distanceText.textContent = `Distance to target: ${distance.toFixed(0)}m`;
-        
-        const maxDistance = 1000; // 1km
-        const progress = Math.max(0, (maxDistance - distance) / maxDistance * 100);
-        this.progressFill.style.width = `${progress}%`;
-
-        // Update Google Maps markers
-        this.updateGoogleMapMarkers();
+        this.updateDistanceBar(distance);
 
         if (distance <= 50) { // Within 50 meters
             this.arriveAtLocation();
@@ -330,13 +321,57 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
 
     handleLocationError(error) {
         console.error('Location error:', error);
-        this.distanceText.textContent = 'Location access denied. Click SKIP to continue.';
+        this.distanceText.textContent = '📍 Location access denied';
+        this.gpsStatusText.textContent = '❌ Allow location access or click SKIP to continue.';
+    }
+
+    resetDistanceBar() {
+        this.distanceText.textContent = '📍 Finding your location...';
+        this.distanceBarFill.style.width = '0%';
+        this.distanceBarText.textContent = '0%';
+        this.distanceMeters.textContent = '--- m';
+        this.gpsStatusText.textContent = '🚶 Start walking towards the target location';
+    }
+
+    updateDistanceBar(distance) {
+        // Update distance text
+        this.distanceText.textContent = `📡 GPS Signal Active`;
+        this.distanceMeters.textContent = `${distance.toFixed(0)} m`;
+        
+        // Calculate progress (closer = higher percentage)
+        const maxDistance = 1000; // Maximum distance for 0% progress
+        const progress = Math.max(0, Math.min(100, (maxDistance - distance) / maxDistance * 100));
+        
+        // Update progress bar
+        this.distanceBarFill.style.width = `${progress}%`;
+        this.distanceBarText.textContent = `${progress.toFixed(0)}%`;
+        
+        // Update status text based on distance
+        if (distance <= 50) {
+            this.gpsStatusText.textContent = '🎉 Perfect! You reached the target location!';
+            this.distanceBarFill.style.background = 'linear-gradient(90deg, #27ae60, #2ecc71)';
+        } else if (distance <= 100) {
+            this.gpsStatusText.textContent = '🔥 Very close! Almost there!';
+            this.distanceBarFill.style.background = 'linear-gradient(90deg, #f39c12, #27ae60)';
+        } else if (distance <= 300) {
+            this.gpsStatusText.textContent = '👍 Getting closer! Keep walking!';
+            this.distanceBarFill.style.background = 'linear-gradient(90deg, #e67e22, #f39c12)';
+        } else if (distance <= 500) {
+            this.gpsStatusText.textContent = '🚶 You\'re on the right track!';
+            this.distanceBarFill.style.background = 'linear-gradient(90deg, #e74c3c, #e67e22)';
+        } else {
+            this.gpsStatusText.textContent = '🧭 Start walking towards the target location';
+            this.distanceBarFill.style.background = 'linear-gradient(90deg, #c0392b, #e74c3c)';
+        }
     }
 
     arriveAtLocation() {
         this.stopLocationTracking();
         this.playSound('arrival');
         this.score += 50; // Bonus for visiting location
+        
+        // Show success message
+        this.gpsStatusText.textContent = '✅ Location reached! Loading next question...';
         
         setTimeout(() => {
             this.currentQuestionIndex++;
@@ -670,329 +705,6 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         }
     }
 
-    initGPSMap() {
-        this.initGoogleMap();
-    }
-
-    initGoogleMap() {
-        try {
-            // Check if Google Maps is available
-            if (typeof google === 'undefined' || !google.maps) {
-                console.log('Google Maps not available, using fallback');
-                this.initFallbackMap();
-                return;
-            }
-
-            // Default location (Bruchsal)
-            const bruchsal = { lat: 49.1244, lng: 8.5985 };
-            
-            this.map = new google.maps.Map(this.googleMap, {
-                zoom: 16,
-                center: bruchsal,
-                mapTypeId: 'roadmap',
-                disableDefaultUI: true,
-                zoomControl: true,
-                mapId: 'DEMO_MAP_ID', // Required for AdvancedMarkerElement
-                zoomControlOptions: {
-                    position: google.maps.ControlPosition.TOP_RIGHT
-                },
-                styles: [
-                    {
-                        "featureType": "all",
-                        "elementType": "all",
-                        "stylers": [{"saturation": -20}]
-                    }
-                ]
-            });
-
-            // Center on user location if available
-            if (this.userLocation) {
-                const userPos = { lat: this.userLocation.lat, lng: this.userLocation.lng };
-                this.map.setCenter(userPos);
-            }
-        } catch (error) {
-            console.log('Google Maps failed to initialize:', error);
-            this.initFallbackMap();
-        }
-    }
-
-    initFallbackMap() {
-        // Create a dynamic fallback map using OpenStreetMap
-        const targetLat = this.targetLocation ? this.targetLocation.lat : 49.1244;
-        const targetLng = this.targetLocation ? this.targetLocation.lng : 8.5985;
-        
-        // Create bounding box around the target location with more zoom
-        const padding = 0.005; // Smaller padding for more zoom
-        const bbox = [
-            targetLng - padding,
-            targetLat - padding,
-            targetLng + padding,
-            targetLat + padding
-        ].join(',');
-        
-        this.googleMap.innerHTML = `
-            <div style="
-                position: absolute; 
-                top: 0; 
-                left: 0; 
-                width: 100%; 
-                height: 100%; 
-                border-radius: 8px; 
-                overflow: hidden;
-            ">
-                <iframe 
-                    width="100%" 
-                    height="100%" 
-                    frameborder="0" 
-                    scrolling="no" 
-                    marginheight="0" 
-                    marginwidth="0" 
-                    src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${targetLat},${targetLng}"
-                    style="
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        border: none;
-                        border-radius: 8px;
-                    ">
-                </iframe>
-                
-                <!-- Target Location Marker -->
-                <div id="target-marker" style="
-                    position: absolute; 
-                    top: 50%; 
-                    left: 50%; 
-                    transform: translate(-50%, -100%);
-                    z-index: 10;
-                    font-size: 24px;
-                    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.7));
-                ">🎯</div>
-                
-                <!-- Player Location Marker (will be positioned dynamically) -->
-                <div id="player-marker" style="
-                    position: absolute; 
-                    z-index: 10;
-                    font-size: 20px;
-                    filter: drop-shadow(2px 2px 4px rgba(0,0,0,0.7));
-                    display: none;
-                ">📍</div>
-                
-                <!-- Info Panel -->
-                <div id="fallback-info" style="
-                    position: absolute; 
-                    top: 8px; 
-                    left: 8px; 
-                    background: rgba(0,0,0,0.8); 
-                    color: white; 
-                    padding: 8px 12px; 
-                    border-radius: 6px; 
-                    font-size: 11px;
-                    font-family: 'Press Start 2P', monospace;
-                    max-width: 180px;
-                    border: 2px solid #daa520;
-                    z-index: 15;
-                ">
-                    🎯 Target Location<br>
-                    📍 Finding your location...
-                </div>
-            </div>
-        `;
-        
-        // Set flag to indicate we're using fallback
-        this.usingFallback = true;
-    }
-
-    updateFallbackMapInfo() {
-        const infoDiv = document.getElementById('fallback-info');
-        const playerMarker = document.getElementById('player-marker');
-        
-        if (this.userLocation && this.targetLocation) {
-            const distance = this.calculateDistance(
-                this.userLocation.lat,
-                this.userLocation.lng,
-                this.targetLocation.lat,
-                this.targetLocation.lng
-            );
-            
-            // Update info panel
-            if (infoDiv) {
-                infoDiv.innerHTML = `
-                    🎯 Target Found<br>
-                    📍 You: ${distance.toFixed(0)}m away<br>
-                    ${distance <= 50 ? '✅ Close enough!' : '🚶 Keep walking...'}
-                `;
-            }
-            
-            // Calculate player marker position relative to target
-            if (playerMarker) {
-                // Simple approximation for marker positioning
-                const latDiff = this.userLocation.lat - this.targetLocation.lat;
-                const lngDiff = this.userLocation.lng - this.targetLocation.lng;
-                
-                // Convert to pixel offset (rough approximation)
-                const pixelsPerDegree = 400 / 0.01; // 400px for 0.01 degree range
-                const offsetX = lngDiff * pixelsPerDegree;
-                const offsetY = -latDiff * pixelsPerDegree; // Negative because map coordinates are inverted
-                
-                // Position relative to center (where target is)
-                const centerX = 200; // 400px / 2
-                const centerY = 200; // 400px / 2
-                
-                const playerX = centerX + offsetX;
-                const playerY = centerY + offsetY;
-                
-                // Only show marker if player is within the visible map bounds
-                if (playerX >= 0 && playerX <= 400 && playerY >= 0 && playerY <= 400) {
-                    playerMarker.style.left = `${playerX}px`;
-                    playerMarker.style.top = `${playerY}px`;
-                    playerMarker.style.transform = 'translate(-50%, -100%)';
-                    playerMarker.style.display = 'block';
-                } else {
-                    // Show arrow pointing to player direction if they're off-map
-                    playerMarker.style.display = 'none';
-                    
-                    // Add direction indicator to info panel
-                    const bearing = this.calculateBearing(
-                        this.targetLocation.lat,
-                        this.targetLocation.lng,
-                        this.userLocation.lat,
-                        this.userLocation.lng
-                    );
-                    const direction = this.getDirectionFromBearing(bearing);
-                    
-                    if (infoDiv) {
-                        infoDiv.innerHTML += `<br>🧭 You are ${direction}`;
-                    }
-                }
-            }
-        } else if (infoDiv) {
-            infoDiv.innerHTML = `
-                🎯 Target Location<br>
-                📍 Finding your location...
-            `;
-        }
-    }
-    
-    getDirectionFromBearing(bearing) {
-        const degrees = bearing * 180 / Math.PI;
-        const normalizedDegrees = (degrees + 360) % 360;
-        
-        if (normalizedDegrees < 22.5 || normalizedDegrees >= 337.5) return 'North';
-        if (normalizedDegrees < 67.5) return 'Northeast';
-        if (normalizedDegrees < 112.5) return 'East';
-        if (normalizedDegrees < 157.5) return 'Southeast';
-        if (normalizedDegrees < 202.5) return 'South';
-        if (normalizedDegrees < 247.5) return 'Southwest';
-        if (normalizedDegrees < 292.5) return 'West';
-        return 'Northwest';
-    }
-
-    updateGPSMap() {
-        this.updateGoogleMapMarkers();
-    }
-
-    updateGoogleMapMarkers() {
-        // Update fallback map info if using fallback
-        if (this.usingFallback) {
-            this.updateFallbackMapInfo();
-            return;
-        }
-        
-        // Skip if no Google Maps
-        if (!this.map) return;
-
-        try {
-            // Update user location marker
-            if (this.userLocation) {
-                const userPos = { lat: this.userLocation.lat, lng: this.userLocation.lng };
-                
-                if (this.playerMarker) {
-                    this.playerMarker.position = userPos;
-                } else {
-                    // Create custom marker element for player
-                    const playerElement = document.createElement('div');
-                    playerElement.innerHTML = `
-                        <div style="
-                            width: 20px; 
-                            height: 20px; 
-                            background: #3498db; 
-                            border: 3px solid #ffffff; 
-                            border-radius: 50%; 
-                            display: flex; 
-                            align-items: center; 
-                            justify-content: center;
-                            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                        ">
-                            <div style="
-                                width: 8px; 
-                                height: 8px; 
-                                background: #87ceeb; 
-                                border-radius: 50%;
-                            "></div>
-                        </div>
-                    `;
-                    
-                    this.playerMarker = new google.maps.marker.AdvancedMarkerElement({
-                        position: userPos,
-                        map: this.map,
-                        title: 'Your Location',
-                        content: playerElement
-                    });
-                }
-                
-                // Center map on player
-                this.map.setCenter(userPos);
-            }
-
-            // Update target location marker
-            if (this.targetLocation) {
-                const targetPos = { lat: this.targetLocation.lat, lng: this.targetLocation.lng };
-                
-                if (this.targetMarker) {
-                    this.targetMarker.position = targetPos;
-                } else {
-                    // Create custom marker element for target
-                    const targetElement = document.createElement('div');
-                    targetElement.innerHTML = `
-                        <div style="
-                            width: 24px; 
-                            height: 24px; 
-                            background: #e74c3c; 
-                            border: 3px solid #ffffff; 
-                            border-radius: 50%; 
-                            display: flex; 
-                            align-items: center; 
-                            justify-content: center;
-                            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                            position: relative;
-                        ">
-                            <div style="
-                                width: 12px; 
-                                height: 12px; 
-                                background: #ff6b6b; 
-                                border-radius: 50%;
-                                display: flex;
-                                align-items: center;
-                                justify-content: center;
-                                font-size: 8px;
-                            ">🎯</div>
-                        </div>
-                    `;
-                    
-                    this.targetMarker = new google.maps.marker.AdvancedMarkerElement({
-                        position: targetPos,
-                        map: this.map,
-                        title: 'Target Location',
-                        content: targetElement
-                    });
-                }
-            }
-        } catch (error) {
-            console.log('Error updating markers:', error);
-        }
-    }
 
 
 
@@ -1035,13 +747,6 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
 
 // Global variable for the game instance
 let gameInstance = null;
-
-// Global initMap function for Google Maps API
-function initMap() {
-    if (gameInstance) {
-        gameInstance.initGoogleMap();
-    }
-}
 
 // Initialize the game when the page loads
 document.addEventListener('DOMContentLoaded', () => {
