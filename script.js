@@ -49,19 +49,12 @@ class BruchsalQuest {
         this.distanceText = document.getElementById('distance-text');
         this.progressFill = document.getElementById('progress-fill');
         this.locationHint = document.getElementById('location-hint');
-        this.gpsMap = document.getElementById('gps-map');
-        this.mapCtx = this.gpsMap.getContext('2d');
+        this.googleMap = document.getElementById('google-map');
         
-        // Map navigation state
-        this.mapZoom = 1.0;
-        this.mapOffsetX = 0;
-        this.mapOffsetY = 0;
-        this.isDragging = false;
-        this.lastMouseX = 0;
-        this.lastMouseY = 0;
-        this.minZoom = 0.5;
-        this.maxZoom = 3.0;
-        this.mapControlsAdded = false;
+        // Google Maps
+        this.map = null;
+        this.playerMarker = null;
+        this.targetMarker = null;
 
         // Game over elements
         this.gameOverTitle = document.getElementById('game-over-title');
@@ -312,8 +305,8 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         const progress = Math.max(0, (maxDistance - distance) / maxDistance * 100);
         this.progressFill.style.width = `${progress}%`;
 
-        // Update the 8-bit map
-        this.updateGPSMap();
+        // Update Google Maps markers
+        this.updateGoogleMapMarkers();
 
         if (distance <= 50) { // Within 50 meters
             this.arriveAtLocation();
@@ -678,323 +671,104 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     }
 
     initGPSMap() {
-        if (!this.mapCtx) return;
-        
-        // Set up the 8-bit style map
-        this.mapCtx.imageSmoothingEnabled = false;
-        
-        // Add map navigation controls
-        this.setupMapControls();
-        this.updateGPSMap();
+        this.initGoogleMap();
     }
 
-    setupMapControls() {
-        const canvas = this.gpsMap;
+    initGoogleMap() {
+        // Default location (Bruchsal)
+        const bruchsal = { lat: 49.1244, lng: 8.5985 };
         
-        // Mouse events for desktop
-        canvas.addEventListener('mousedown', (e) => this.startDrag(e));
-        canvas.addEventListener('mousemove', (e) => this.drag(e));
-        canvas.addEventListener('mouseup', () => this.endDrag());
-        canvas.addEventListener('mouseleave', () => this.endDrag());
-        canvas.addEventListener('wheel', (e) => this.zoom(e));
-        
-        // Touch events for mobile
-        canvas.addEventListener('touchstart', (e) => this.startDrag(e.touches[0]));
-        canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            this.drag(e.touches[0]);
+        this.map = new google.maps.Map(this.googleMap, {
+            zoom: 16,
+            center: bruchsal,
+            mapTypeId: 'roadmap',
+            disableDefaultUI: true,
+            zoomControl: true,
+            zoomControlOptions: {
+                position: google.maps.ControlPosition.TOP_RIGHT
+            },
+            styles: [
+                {
+                    "featureType": "all",
+                    "elementType": "all",
+                    "stylers": [{"saturation": -20}]
+                }
+            ]
         });
-        canvas.addEventListener('touchend', () => this.endDrag());
-        
-        // Prevent context menu on right click
-        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-    }
 
-    startDrag(e) {
-        this.isDragging = true;
-        const rect = this.gpsMap.getBoundingClientRect();
-        this.lastMouseX = e.clientX - rect.left;
-        this.lastMouseY = e.clientY - rect.top;
-        this.gpsMap.style.cursor = 'grabbing';
-    }
-
-    drag(e) {
-        if (!this.isDragging) return;
-        
-        const rect = this.gpsMap.getBoundingClientRect();
-        const currentX = e.clientX - rect.left;
-        const currentY = e.clientY - rect.top;
-        
-        const deltaX = currentX - this.lastMouseX;
-        const deltaY = currentY - this.lastMouseY;
-        
-        this.mapOffsetX += deltaX;
-        this.mapOffsetY += deltaY;
-        
-        this.lastMouseX = currentX;
-        this.lastMouseY = currentY;
-        
-        this.updateGPSMap();
-    }
-
-    endDrag() {
-        this.isDragging = false;
-        this.gpsMap.style.cursor = 'grab';
-    }
-
-    zoom(e) {
-        e.preventDefault();
-        
-        const rect = this.gpsMap.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
-        
-        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-        const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.mapZoom * zoomFactor));
-        
-        if (newZoom !== this.mapZoom) {
-            // Zoom towards mouse position
-            const zoomChange = newZoom / this.mapZoom;
-            this.mapOffsetX = mouseX - (mouseX - this.mapOffsetX) * zoomChange;
-            this.mapOffsetY = mouseY - (mouseY - this.mapOffsetY) * zoomChange;
-            this.mapZoom = newZoom;
-            
-            this.updateGPSMap();
+        // Center on user location if available
+        if (this.userLocation) {
+            const userPos = { lat: this.userLocation.lat, lng: this.userLocation.lng };
+            this.map.setCenter(userPos);
         }
     }
+
 
     updateGPSMap() {
-        if (!this.mapCtx || !this.targetLocation) return;
-        
-        const canvas = this.gpsMap;
-        const ctx = this.mapCtx;
-        
-        // Clear canvas first
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Calculate center points (these are in screen coordinates, not affected by transform)
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        
-        // Draw background
-        ctx.fillStyle = '#1a1a1a';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Apply zoom and pan transformations for map elements only
-        ctx.save();
-        ctx.translate(this.mapOffsetX, this.mapOffsetY);
-        ctx.scale(this.mapZoom, this.mapZoom);
-        
-        // Transform center coordinates for drawing transformed elements
-        const transformedCenterX = (centerX - this.mapOffsetX) / this.mapZoom;
-        const transformedCenterY = (centerY - this.mapOffsetY) / this.mapZoom;
-        
-        // Draw 8-bit street pattern (transformed)
-        this.draw8BitStreets(ctx, canvas.width / this.mapZoom, canvas.height / this.mapZoom);
-        
-        // Draw grid overlay (subtle, transformed)
-        ctx.strokeStyle = '#333333';
-        ctx.lineWidth = 1 / this.mapZoom;
-        ctx.globalAlpha = 0.3;
-        const gridSize = 25;
-        
-        for (let x = 0; x <= canvas.width / this.mapZoom; x += gridSize) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvas.height / this.mapZoom);
-            ctx.stroke();
-        }
-        
-        for (let y = 0; y <= canvas.height / this.mapZoom; y += gridSize) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvas.width / this.mapZoom, y);
-            ctx.stroke();
-        }
-        ctx.globalAlpha = 1.0;
-        
-        // Draw range circles (transformed)
-        ctx.strokeStyle = '#27ae60';
-        ctx.lineWidth = 2 / this.mapZoom;
-        ctx.globalAlpha = 0.6;
-        for (let radius = 40; radius <= 140; radius += 35) {
-            ctx.beginPath();
-            ctx.arc(transformedCenterX, transformedCenterY, radius / this.mapZoom, 0, 2 * Math.PI);
-            ctx.stroke();
-        }
-        ctx.globalAlpha = 1.0;
-        
-        // Player is always at center (blue dot with pulse effect) - in transformed coordinates
-        this.drawPixelDot(ctx, transformedCenterX, transformedCenterY, '#3498db', 8 / this.mapZoom);
-        this.drawPixelDot(ctx, transformedCenterX, transformedCenterY, '#87ceeb', 4 / this.mapZoom);
-        ctx.fillStyle = '#ffffff';
-        ctx.font = `${10 / this.mapZoom}px monospace`;
-        ctx.textAlign = 'center';
-        ctx.fillText('YOU', transformedCenterX, transformedCenterY + 20 / this.mapZoom);
-        
-        // Calculate target position relative to player (in transformed coordinates)
+        this.updateGoogleMapMarkers();
+    }
+
+    updateGoogleMapMarkers() {
+        if (!this.map) return;
+
+        // Update user location marker
         if (this.userLocation) {
-            const distance = this.calculateDistance(
-                this.userLocation.lat,
-                this.userLocation.lng,
-                this.targetLocation.lat,
-                this.targetLocation.lng
-            );
+            const userPos = { lat: this.userLocation.lat, lng: this.userLocation.lng };
             
-            // Calculate bearing (direction)
-            const bearing = this.calculateBearing(
-                this.userLocation.lat,
-                this.userLocation.lng,
-                this.targetLocation.lat,
-                this.targetLocation.lng
-            );
-            
-            // Map distance to pixel distance (max 140px radius for larger map)
-            const maxDistance = 1000; // 1km
-            const pixelDistance = Math.min((distance / maxDistance) * 140, 140);
-            
-            // Convert bearing to canvas coordinates (in transformed space)
-            const targetX = transformedCenterX + Math.sin(bearing) * (pixelDistance / this.mapZoom);
-            const targetY = transformedCenterY - Math.cos(bearing) * (pixelDistance / this.mapZoom);
-            
-            // Draw target (red dot with glow)
-            this.drawPixelDot(ctx, targetX, targetY, '#e74c3c', 8 / this.mapZoom);
-            this.drawPixelDot(ctx, targetX, targetY, '#ff6b6b', 4 / this.mapZoom);
-            
-            // Add target label
-            ctx.fillStyle = '#ffffff';
-            ctx.font = `${8 / this.mapZoom}px monospace`;
-            ctx.textAlign = 'center';
-            ctx.fillText('TARGET', targetX, targetY + 18 / this.mapZoom);
-            
-            // Draw directional arrow if target is off-map
-            if (pixelDistance >= 140) {
-                this.drawDirectionalArrow(ctx, transformedCenterX, transformedCenterY, bearing);
+            if (this.playerMarker) {
+                this.playerMarker.setPosition(userPos);
+            } else {
+                this.playerMarker = new google.maps.Marker({
+                    position: userPos,
+                    map: this.map,
+                    title: 'Your Location',
+                    icon: {
+                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                            <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="10" cy="10" r="8" fill="#3498db" stroke="#ffffff" stroke-width="2"/>
+                                <circle cx="10" cy="10" r="4" fill="#87ceeb"/>
+                            </svg>
+                        `),
+                        scaledSize: new google.maps.Size(20, 20),
+                        anchor: new google.maps.Point(10, 10)
+                    }
+                });
             }
             
-            // Draw connecting line
-            ctx.strokeStyle = '#f39c12';
-            ctx.lineWidth = 2 / this.mapZoom;
-            ctx.globalAlpha = 0.7;
-            ctx.setLineDash([5 / this.mapZoom, 5 / this.mapZoom]);
-            ctx.beginPath();
-            ctx.moveTo(transformedCenterX, transformedCenterY);
-            ctx.lineTo(targetX, targetY);
-            ctx.stroke();
-            ctx.setLineDash([]);
-            ctx.globalAlpha = 1.0;
-            
-        } else {
-            // Show target at approximate location if no GPS yet
-            this.drawPixelDot(ctx, transformedCenterX, transformedCenterY - 60 / this.mapZoom, '#e74c3c', 8 / this.mapZoom);
-            this.drawPixelDot(ctx, transformedCenterX, transformedCenterY - 60 / this.mapZoom, '#ff6b6b', 4 / this.mapZoom);
-            
-            ctx.fillStyle = '#ffd700';
-            ctx.font = `${12 / this.mapZoom}px monospace`;
-            ctx.textAlign = 'center';
-            ctx.fillText('🔍 SEARCHING GPS...', transformedCenterX, (canvas.height - 15) / this.mapZoom);
+            // Center map on player
+            this.map.setCenter(userPos);
         }
-        
-        // Restore canvas transformation
-        ctx.restore();
-        
-        // Draw distance text on map (not affected by zoom/pan)
-        if (this.userLocation) {
-            const distance = this.calculateDistance(
-                this.userLocation.lat,
-                this.userLocation.lng,
-                this.targetLocation.lat,
-                this.targetLocation.lng
-            );
-            ctx.fillStyle = '#ecf0f1';
-            ctx.font = '12px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(`Distance: ${distance.toFixed(0)}m`, centerX, canvas.height - 10);
+
+        // Update target location marker
+        if (this.targetLocation) {
+            const targetPos = { lat: this.targetLocation.lat, lng: this.targetLocation.lng };
+            
+            if (this.targetMarker) {
+                this.targetMarker.setPosition(targetPos);
+            } else {
+                this.targetMarker = new google.maps.Marker({
+                    position: targetPos,
+                    map: this.map,
+                    title: 'Target Location',
+                    icon: {
+                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                            <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                                <circle cx="12" cy="12" r="10" fill="#e74c3c" stroke="#ffffff" stroke-width="2"/>
+                                <circle cx="12" cy="12" r="6" fill="#ff6b6b"/>
+                                <text x="12" y="16" text-anchor="middle" fill="white" font-size="8" font-family="monospace">🎯</text>
+                            </svg>
+                        `),
+                        scaledSize: new google.maps.Size(24, 24),
+                        anchor: new google.maps.Point(12, 12)
+                    }
+                });
+            }
         }
-        
-        // Draw zoom controls on top (not affected by zoom/pan)
-        this.drawMapControls(ctx, canvas.width, canvas.height);
     }
 
-    drawPixelDot(ctx, x, y, color, size) {
-        ctx.fillStyle = color;
-        ctx.fillRect(x - size/2, y - size/2, size, size);
-        
-        // Add white border for better visibility
-        ctx.strokeStyle = '#ecf0f1';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x - size/2, y - size/2, size, size);
-    }
 
-    drawCompass(ctx, centerX, centerY) {
-        const compassSize = 20;
-        
-        // Compass background circle
-        ctx.fillStyle = 'rgba(139, 69, 19, 0.8)';
-        ctx.beginPath();
-        ctx.arc(centerX, centerY - compassSize - 130, 25, 0, 2 * Math.PI);
-        ctx.fill();
-        
-        ctx.strokeStyle = '#daa520';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        // North arrow
-        ctx.fillStyle = '#e74c3c';
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY - compassSize - 145);
-        ctx.lineTo(centerX - 6, centerY - compassSize - 125);
-        ctx.lineTo(centerX + 6, centerY - compassSize - 125);
-        ctx.closePath();
-        ctx.fill();
-        
-        // South arrow
-        ctx.fillStyle = '#95a5a6';
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY - compassSize - 115);
-        ctx.lineTo(centerX - 4, centerY - compassSize - 125);
-        ctx.lineTo(centerX + 4, centerY - compassSize - 125);
-        ctx.closePath();
-        ctx.fill();
-        
-        // N label
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '12px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('N', centerX, centerY - compassSize - 100);
-    }
 
-    drawDirectionalArrow(ctx, centerX, centerY, bearing) {
-        const arrowDistance = 120;
-        const arrowX = centerX + Math.sin(bearing) * arrowDistance;
-        const arrowY = centerY - Math.cos(bearing) * arrowDistance;
-        
-        ctx.save();
-        ctx.translate(arrowX, arrowY);
-        ctx.rotate(bearing);
-        
-        // Draw larger arrow pointing towards target
-        ctx.fillStyle = '#f39c12';
-        ctx.beginPath();
-        ctx.moveTo(0, -12);
-        ctx.lineTo(-8, 5);
-        ctx.lineTo(8, 5);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Add arrow outline
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-        
-        ctx.restore();
-        
-        // Add distance text near arrow
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '10px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('TARGET', arrowX, arrowY + 20);
-    }
+
 
     calculateBearing(lat1, lng1, lat2, lng2) {
         const dLng = (lng2 - lng1) * Math.PI / 180;
@@ -1008,607 +782,42 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         return Math.atan2(y, x);
     }
 
-    async loadRealStreets(centerLat, centerLng, radiusKm = 0.8) {
-        try {
-            // Use Overpass API to get comprehensive map data
-            const overpassUrl = 'https://overpass-api.de/api/interpreter';
-            const query = `
-                [out:json][timeout:30];
-                (
-                  // Major streets with names
-                  way["highway"~"^(primary|secondary|tertiary|trunk|residential)$"]["name"]
-                     (around:${radiusKm * 1000},${centerLat},${centerLng});
-                  // Also get streets without names for better coverage
-                  way["highway"~"^(primary|secondary|tertiary|trunk)$"]
-                     (around:${radiusKm * 1000},${centerLat},${centerLng});
-                  // Important buildings
-                  way["building"~"^(palace|castle|church|cathedral|museum|town_hall|civic|public)$"]
-                     (around:${radiusKm * 1000},${centerLat},${centerLng});
-                  way["tourism"~"^(museum|attraction|castle|palace)$"]
-                     (around:${radiusKm * 1000},${centerLat},${centerLng});
-                  way["amenity"~"^(townhall|place_of_worship|museum|theatre)$"]
-                     (around:${radiusKm * 1000},${centerLat},${centerLng});
-                  // Parks and green spaces
-                  way["leisure"~"^(park|garden)$"]
-                     (around:${radiusKm * 1000},${centerLat},${centerLng});
-                );
-                out geom;
-            `;
-            
-            const response = await fetch(overpassUrl, {
-                method: 'POST',
-                body: 'data=' + encodeURIComponent(query),
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-            });
-            
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Loaded real map data:', data.elements.length, 'elements');
-                return this.processMapData(data.elements);
-            }
-        } catch (error) {
-            console.log('Could not load real streets, using fallback pattern');
-        }
-        return null;
-    }
 
-    processMapData(elements) {
-        const mapData = {
-            streets: [],
-            buildings: [],
-            parks: []
-        };
 
-        elements.forEach(element => {
-            if (element.tags) {
-                if (element.tags.highway) {
-                    mapData.streets.push({
-                        ...element,
-                        name: element.tags.name || 'Street',
-                        type: element.tags.highway
-                    });
-                } else if (element.tags.building || element.tags.tourism || element.tags.amenity) {
-                    mapData.buildings.push({
-                        ...element,
-                        name: element.tags.name || this.getBuildingTypeLabel(element.tags),
-                        type: this.getBuildingType(element.tags)
-                    });
-                } else if (element.tags.leisure) {
-                    mapData.parks.push({
-                        ...element,
-                        name: element.tags.name || 'Park',
-                        type: element.tags.leisure
-                    });
-                }
-            }
-        });
 
-        return mapData;
-    }
 
-    getBuildingType(tags) {
-        if (tags.tourism === 'castle' || tags.tourism === 'palace' || tags.building === 'palace') return 'palace';
-        if (tags.amenity === 'place_of_worship' || tags.building === 'church') return 'church';
-        if (tags.tourism === 'museum' || tags.amenity === 'museum') return 'museum';
-        if (tags.amenity === 'townhall' || tags.building === 'civic') return 'townhall';
-        if (tags.amenity === 'theatre') return 'theatre';
-        return 'building';
-    }
 
-    getBuildingTypeLabel(tags) {
-        if (tags.tourism === 'castle' || tags.tourism === 'palace') return 'Palace';
-        if (tags.amenity === 'place_of_worship') return 'Church';
-        if (tags.tourism === 'museum') return 'Museum';
-        if (tags.amenity === 'townhall') return 'Town Hall';
-        if (tags.amenity === 'theatre') return 'Theatre';
-        return 'Building';
-    }
 
-    async draw8BitStreets(ctx, width, height) {
-        // Clear background with tourist map color
-        ctx.fillStyle = '#f5f5dc'; // Beige background like tourist maps
-        ctx.fillRect(0, 0, width, height);
-        
-        let mapData = null;
-        
-        // Try to load real map data if we have user location
-        if (this.userLocation) {
-            mapData = await this.loadRealStreets(this.userLocation.lat, this.userLocation.lng, 0.8);
-        }
-        
-        if (mapData && (mapData.streets.length > 0 || mapData.buildings.length > 0)) {
-            // Draw real tourist map in 8-bit style
-            this.drawTouristMap8Bit(ctx, width, height, mapData);
-        } else {
-            // Fallback to generic pattern
-            this.drawGenericStreets8Bit(ctx, width, height);
-        }
-    }
 
-    drawTouristMap8Bit(ctx, width, height, mapData) {
-        const centerX = width / 2;
-        const centerY = height / 2;
-        
-        // Calculate bounds for all elements
-        const bounds = this.calculateMapBounds(mapData);
-        
-        // Draw parks first (green background areas)
-        this.drawParks8Bit(ctx, width, height, mapData.parks, bounds);
-        
-        // Draw major streets with names
-        this.drawMajorStreets8Bit(ctx, width, height, mapData.streets, bounds);
-        
-        // Draw important buildings with icons
-        this.drawImportantBuildings8Bit(ctx, width, height, mapData.buildings, bounds);
-        
-        // Add your location marker
-        ctx.fillStyle = '#ff0000';
-        ctx.fillRect(centerX - 6, centerY - 6, 12, 12);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(centerX - 3, centerY - 3, 6, 6);
-        
-        // Add location label
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 10px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('YOU', centerX, centerY + 20);
-        
-        // Add map legend/compass
-        this.drawMapLegend8Bit(ctx, width, height);
-    }
 
-    drawParks8Bit(ctx, width, height, parks, bounds) {
-        ctx.fillStyle = '#90EE90'; // Light green for parks
-        
-        parks.forEach(park => {
-            if (park.geometry && park.geometry.length > 2) {
-                ctx.beginPath();
-                let firstPoint = true;
-                
-                park.geometry.forEach(node => {
-                    const pixelCoords = this.geoToPixel(node.lat, node.lon, bounds, width, height);
-                    if (firstPoint) {
-                        ctx.moveTo(pixelCoords.x, pixelCoords.y);
-                        firstPoint = false;
-                    } else {
-                        ctx.lineTo(pixelCoords.x, pixelCoords.y);
-                    }
-                });
-                ctx.closePath();
-                ctx.fill();
-                
-                // Add park label
-                if (park.geometry.length > 0) {
-                    const centerPoint = this.getPolygonCenter(park.geometry, bounds, width, height);
-                    ctx.fillStyle = '#006400';
-                    ctx.font = '8px monospace';
-                    ctx.textAlign = 'center';
-                    ctx.fillText('🌳', centerPoint.x, centerPoint.y);
-                    ctx.fillText(park.name, centerPoint.x, centerPoint.y + 12);
-                    ctx.fillStyle = '#90EE90';
-                }
-            }
-        });
-    }
 
-    drawMajorStreets8Bit(ctx, width, height, streets, bounds) {
-        const streetsByType = {
-            trunk: { color: '#2A2A2A', width: 10 }, // Very dark for highways
-            primary: { color: '#4A4A4A', width: 8 }, // Dark gray for major roads
-            secondary: { color: '#6A6A6A', width: 6 }, // Medium gray for secondary
-            tertiary: { color: '#8A8A8A', width: 4 }, // Light gray for smaller roads
-            residential: { color: '#AAAAAA', width: 2 } // Very light gray for residential
-        };
-        
-        console.log('Drawing streets:', streets.length, 'street elements');
-        
-        // Draw streets by importance - draw ALL street types
-        ['trunk', 'primary', 'secondary', 'tertiary', 'residential'].forEach(streetType => {
-            const style = streetsByType[streetType] || { color: '#8A8A8A', width: 3 };
-            
-            streets.filter(street => street.type === streetType).forEach(street => {
-                if (street.geometry && street.geometry.length > 1) {
-                    // Draw street
-                    ctx.strokeStyle = style.color;
-                    ctx.lineWidth = style.width;
-                    ctx.lineCap = 'round';
-                    
-                    ctx.beginPath();
-                    let firstPoint = true;
-                    let midPoint = null;
-                    
-                    street.geometry.forEach((node, index) => {
-                        const pixelCoords = this.geoToPixel(node.lat, node.lon, bounds, width, height);
-                        if (firstPoint) {
-                            ctx.moveTo(pixelCoords.x, pixelCoords.y);
-                            firstPoint = false;
-                        } else {
-                            ctx.lineTo(pixelCoords.x, pixelCoords.y);
-                        }
-                        
-                        // Remember middle point for street name
-                        if (index === Math.floor(street.geometry.length / 2)) {
-                            midPoint = pixelCoords;
-                        }
-                    });
-                    ctx.stroke();
-                    
-                    // Add street name for major roads
-                    if ((streetType === 'primary' || streetType === 'trunk' || streetType === 'secondary') && midPoint && street.name && street.name !== 'Street') {
-                        ctx.fillStyle = '#000000';
-                        ctx.strokeStyle = '#FFFFFF';
-                        ctx.lineWidth = 3;
-                        ctx.font = 'bold 8px monospace';
-                        ctx.textAlign = 'center';
-                        
-                        // Draw text outline for better visibility
-                        ctx.strokeText(street.name, midPoint.x, midPoint.y - 5);
-                        ctx.fillText(street.name, midPoint.x, midPoint.y - 5);
-                    }
-                }
-            });
-        });
-    }
 
-    drawImportantBuildings8Bit(ctx, width, height, buildings, bounds) {
-        const buildingStyles = {
-            palace: { icon: '🏰', color: '#FFD700', label: 'Palace' },
-            church: { icon: '⛪', color: '#8B4513', label: 'Church' },
-            museum: { icon: '🏛️', color: '#4169E1', label: 'Museum' },
-            townhall: { icon: '🏛️', color: '#DC143C', label: 'Town Hall' },
-            theatre: { icon: '🎭', color: '#800080', label: 'Theatre' }
-        };
-        
-        buildings.forEach(building => {
-            const style = buildingStyles[building.type] || buildingStyles.building;
-            
-            if (building.geometry && building.geometry.length > 0) {
-                const centerPoint = this.getPolygonCenter(building.geometry, bounds, width, height);
-                
-                // Draw building background
-                ctx.fillStyle = style.color;
-                ctx.fillRect(centerPoint.x - 8, centerPoint.y - 8, 16, 16);
-                
-                // Draw building border
-                ctx.strokeStyle = '#000000';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(centerPoint.x - 8, centerPoint.y - 8, 16, 16);
-                
-                // Draw icon
-                ctx.font = '12px monospace';
-                ctx.textAlign = 'center';
-                ctx.fillText(style.icon, centerPoint.x, centerPoint.y + 3);
-                
-                // Draw building name
-                ctx.fillStyle = '#000000';
-                ctx.font = 'bold 8px monospace';
-                ctx.textAlign = 'center';
-                
-                // Draw text with white outline for visibility
-                ctx.strokeStyle = '#FFFFFF';
-                ctx.lineWidth = 2;
-                ctx.strokeText(building.name, centerPoint.x, centerPoint.y + 20);
-                ctx.fillText(building.name, centerPoint.x, centerPoint.y + 20);
-            }
-        });
-    }
 
-    drawMapLegend8Bit(ctx, width, height) {
-        // Draw compass
-        const compassX = width - 30;
-        const compassY = 30;
-        
-        ctx.fillStyle = '#FFFFFF';
-        ctx.strokeStyle = '#000000';
-        ctx.lineWidth = 2;
-        ctx.fillRect(compassX - 15, compassY - 15, 30, 30);
-        ctx.strokeRect(compassX - 15, compassY - 15, 30, 30);
-        
-        // North arrow
-        ctx.fillStyle = '#FF0000';
-        ctx.beginPath();
-        ctx.moveTo(compassX, compassY - 10);
-        ctx.lineTo(compassX - 5, compassY + 5);
-        ctx.lineTo(compassX + 5, compassY + 5);
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 8px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('N', compassX, compassY + 25);
-    }
 
-    getPolygonCenter(geometry, bounds, width, height) {
-        let sumX = 0, sumY = 0;
-        geometry.forEach(node => {
-            const pixelCoords = this.geoToPixel(node.lat, node.lon, bounds, width, height);
-            sumX += pixelCoords.x;
-            sumY += pixelCoords.y;
-        });
-        return {
-            x: sumX / geometry.length,
-            y: sumY / geometry.length
-        };
-    }
 
-    calculateMapBounds(mapData) {
-        let minLat = Infinity, maxLat = -Infinity;
-        let minLon = Infinity, maxLon = -Infinity;
-        
-        [...mapData.streets, ...mapData.buildings, ...mapData.parks].forEach(element => {
-            if (element.geometry) {
-                element.geometry.forEach(node => {
-                    minLat = Math.min(minLat, node.lat);
-                    maxLat = Math.max(maxLat, node.lat);
-                    minLon = Math.min(minLon, node.lon);
-                    maxLon = Math.max(maxLon, node.lon);
-                });
-            }
-        });
-        
-        return { minLat, maxLat, minLon, maxLon };
-    }
 
-    calculateBounds(streetData) {
-        let minLat = Infinity, maxLat = -Infinity;
-        let minLon = Infinity, maxLon = -Infinity;
-        
-        streetData.forEach(way => {
-            if (way.geometry) {
-                way.geometry.forEach(node => {
-                    minLat = Math.min(minLat, node.lat);
-                    maxLat = Math.max(maxLat, node.lat);
-                    minLon = Math.min(minLon, node.lon);
-                    maxLon = Math.max(maxLon, node.lon);
-                });
-            }
-        });
-        
-        return { minLat, maxLat, minLon, maxLon };
-    }
 
-    geoToPixel(lat, lon, bounds, width, height) {
-        const x = ((lon - bounds.minLon) / (bounds.maxLon - bounds.minLon)) * width;
-        const y = height - ((lat - bounds.minLat) / (bounds.maxLat - bounds.minLat)) * height;
-        return { x, y };
-    }
 
-    addRandomBuildings8Bit(ctx, width, height, streetData, bounds) {
-        // Add simple building blocks in 8-bit style
-        ctx.fillStyle = '#404040';
-        
-        for (let i = 0; i < 15; i++) {
-            const x = Math.random() * (width - 20) + 10;
-            const y = Math.random() * (height - 20) + 10;
-            const size = 12 + Math.random() * 8;
-            
-            ctx.fillRect(x, y, size, size);
-            
-            // Add windows
-            ctx.fillStyle = '#ffd700';
-            if (Math.random() > 0.5) {
-                ctx.fillRect(x + 2, y + 2, 2, 2);
-                ctx.fillRect(x + size - 4, y + 2, 2, 2);
-            }
-            ctx.fillStyle = '#404040';
-        }
-    }
 
-    drawGenericStreets8Bit(ctx, width, height) {
-        // Fallback generic pattern (your original code)
-        ctx.fillStyle = '#505050';
-        
-        // Main horizontal streets
-        for (let y = 40; y < height; y += 80) {
-            ctx.fillRect(0, y - 8, width, 16);
-        }
-        
-        // Main vertical streets  
-        for (let x = 60; x < width; x += 100) {
-            ctx.fillRect(x - 8, 0, 16, height);
-        }
-        
-        // Add yellow center lines
-        ctx.strokeStyle = '#ffff00';
-        ctx.lineWidth = 1;
-        ctx.setLineDash([6, 6]);
-        
-        for (let y = 40; y < height; y += 80) {
-            ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(width, y);
-            ctx.stroke();
-        }
-        
-        for (let x = 60; x < width; x += 100) {
-            ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, height);
-            ctx.stroke();
-        }
-        ctx.setLineDash([]);
-        
-        // Add buildings
-        this.addRandomBuildings8Bit(ctx, width, height, null, null);
-        
-        // Add tourist-style landmarks
-        const landmarks = [
-            { x: width/2, y: height/2, icon: '🏰', name: 'Palace', color: '#FFD700' },
-            { x: width/4, y: height/3, icon: '⛪', name: 'Church', color: '#8B4513' },
-            { x: 3*width/4, y: 2*height/3, icon: '🏛️', name: 'Museum', color: '#4169E1' }
-        ];
-        
-        landmarks.forEach(landmark => {
-            // Draw building background
-            ctx.fillStyle = landmark.color;
-            ctx.fillRect(landmark.x - 12, landmark.y - 12, 24, 24);
-            
-            // Draw border
-            ctx.strokeStyle = '#000000';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(landmark.x - 12, landmark.y - 12, 24, 24);
-            
-            // Draw icon
-            ctx.font = '16px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(landmark.icon, landmark.x, landmark.y + 4);
-            
-            // Draw name
-            ctx.fillStyle = '#000000';
-            ctx.font = 'bold 8px monospace';
-            ctx.strokeStyle = '#FFFFFF';
-            ctx.lineWidth = 2;
-            ctx.strokeText(landmark.name, landmark.x, landmark.y + 25);
-            ctx.fillText(landmark.name, landmark.x, landmark.y + 25);
-        });
-        
-        // Add street names
-        ctx.fillStyle = '#000000';
-        ctx.font = 'bold 10px monospace';
-        ctx.textAlign = 'center';
-        ctx.strokeStyle = '#FFFFFF';
-        ctx.lineWidth = 2;
-        ctx.strokeText('MAIN STREET', width/2, 30);
-        ctx.fillText('MAIN STREET', width/2, 30);
-        
-        // Add compass
-        this.drawMapLegend8Bit(ctx, width, height);
-    }
 
-    drawMapControls(ctx, width, height) {
-        // Draw zoom control buttons in top-right corner (not affected by zoom/pan)
-        const buttonSize = 30;
-        const margin = 10;
-        const startX = width - buttonSize - margin;
-        const zoomInY = margin;
-        const zoomOutY = margin + buttonSize + 5;
-        
-        // Zoom In Button
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(startX, zoomInY, buttonSize, buttonSize);
-        ctx.strokeStyle = '#daa520';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(startX, zoomInY, buttonSize, buttonSize);
-        
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('+', startX + buttonSize/2, zoomInY + buttonSize/2 + 5);
-        
-        // Zoom Out Button
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(startX, zoomOutY, buttonSize, buttonSize);
-        ctx.strokeStyle = '#daa520';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(startX, zoomOutY, buttonSize, buttonSize);
-        
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 16px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('−', startX + buttonSize/2, zoomOutY + buttonSize/2 + 5);
-        
-        // Add click handlers for buttons (check if they exist first)
-        if (!this.mapControlsAdded) {
-            this.mapControlsAdded = true;
-            
-            this.gpsMap.addEventListener('click', (e) => {
-                const rect = this.gpsMap.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                // Check if click is on zoom in button
-                if (x >= startX && x <= startX + buttonSize && y >= zoomInY && y <= zoomInY + buttonSize) {
-                    this.zoomIn();
-                }
-                // Check if click is on zoom out button
-                else if (x >= startX && x <= startX + buttonSize && y >= zoomOutY && y <= zoomOutY + buttonSize) {
-                    this.zoomOut();
-                }
-            });
-        }
-        
-        // Draw zoom level indicator
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-        ctx.fillRect(10, height - 30, 80, 20);
-        ctx.strokeStyle = '#daa520';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(10, height - 30, 80, 20);
-        
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '10px monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Zoom: ${(this.mapZoom * 100).toFixed(0)}%`, 15, height - 17);
-    }
 
-    zoomIn() {
-        const newZoom = Math.min(this.maxZoom, this.mapZoom * 1.2);
-        if (newZoom !== this.mapZoom) {
-            this.mapZoom = newZoom;
-            this.updateGPSMap();
-        }
-    }
 
-    zoomOut() {
-        const newZoom = Math.max(this.minZoom, this.mapZoom * 0.8);
-        if (newZoom !== this.mapZoom) {
-            this.mapZoom = newZoom;
-            this.updateGPSMap();
-        }
-    }
 
-    drawPixelDot(ctx, x, y, color, size) {
-        ctx.fillStyle = color;
-        ctx.fillRect(x - size/2, y - size/2, size, size);
-    }
+}
 
-    drawCompass(ctx, centerX, centerY) {
-        // Draw simple 8-bit compass
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.arc(centerX + 100, centerY - 100, 20, 0, 2 * Math.PI);
-        ctx.stroke();
-        
-        // North arrow
-        ctx.fillStyle = '#e74c3c';
-        ctx.beginPath();
-        ctx.moveTo(centerX + 100, centerY - 115);
-        ctx.lineTo(centerX + 95, centerY - 105);
-        ctx.lineTo(centerX + 105, centerY - 105);
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '8px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('N', centerX + 100, centerY - 75);
-    }
+// Global variable for the game instance
+let gameInstance = null;
 
-    drawDirectionalArrow(ctx, centerX, centerY, bearing) {
-        const arrowRadius = 130 / this.mapZoom;
-        const arrowX = centerX + Math.sin(bearing) * arrowRadius;
-        const arrowY = centerY - Math.cos(bearing) * arrowRadius;
-        
-        ctx.fillStyle = '#f39c12';
-        ctx.strokeStyle = '#e67e22';
-        ctx.lineWidth = 2 / this.mapZoom;
-        
-        // Draw arrow pointing towards target
-        const arrowSize = 8 / this.mapZoom;
-        ctx.beginPath();
-        ctx.moveTo(arrowX, arrowY);
-        ctx.lineTo(arrowX - arrowSize * Math.sin(bearing - Math.PI/6), arrowY + arrowSize * Math.cos(bearing - Math.PI/6));
-        ctx.lineTo(arrowX - arrowSize * Math.sin(bearing + Math.PI/6), arrowY + arrowSize * Math.cos(bearing + Math.PI/6));
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
+// Global initMap function for Google Maps API
+function initMap() {
+    if (gameInstance && gameInstance.map === null) {
+        gameInstance.initGoogleMap();
     }
 }
 
 // Initialize the game when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    new BruchsalQuest();
+    gameInstance = new BruchsalQuest();
     
     // Register service worker for PWA
     if ('serviceWorker' in navigator) {
