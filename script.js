@@ -769,66 +769,70 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         const canvas = this.gpsMap;
         const ctx = this.mapCtx;
         
-        // Apply zoom and pan transformations
-        ctx.save();
+        // Clear canvas first
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.translate(this.mapOffsetX, this.mapOffsetY);
-        ctx.scale(this.mapZoom, this.mapZoom);
         
+        // Calculate center points (these are in screen coordinates, not affected by transform)
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         
-        // Clear canvas
+        // Draw background
         ctx.fillStyle = '#1a1a1a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw 8-bit street pattern
-        this.draw8BitStreets(ctx, canvas.width, canvas.height);
+        // Apply zoom and pan transformations for map elements only
+        ctx.save();
+        ctx.translate(this.mapOffsetX, this.mapOffsetY);
+        ctx.scale(this.mapZoom, this.mapZoom);
         
-        // Draw grid overlay (subtle)
+        // Transform center coordinates for drawing transformed elements
+        const transformedCenterX = (centerX - this.mapOffsetX) / this.mapZoom;
+        const transformedCenterY = (centerY - this.mapOffsetY) / this.mapZoom;
+        
+        // Draw 8-bit street pattern (transformed)
+        this.draw8BitStreets(ctx, canvas.width / this.mapZoom, canvas.height / this.mapZoom);
+        
+        // Draw grid overlay (subtle, transformed)
         ctx.strokeStyle = '#333333';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 1 / this.mapZoom;
         ctx.globalAlpha = 0.3;
         const gridSize = 25;
         
-        for (let x = 0; x <= canvas.width; x += gridSize) {
+        for (let x = 0; x <= canvas.width / this.mapZoom; x += gridSize) {
             ctx.beginPath();
             ctx.moveTo(x, 0);
-            ctx.lineTo(x, canvas.height);
+            ctx.lineTo(x, canvas.height / this.mapZoom);
             ctx.stroke();
         }
         
-        for (let y = 0; y <= canvas.height; y += gridSize) {
+        for (let y = 0; y <= canvas.height / this.mapZoom; y += gridSize) {
             ctx.beginPath();
             ctx.moveTo(0, y);
-            ctx.lineTo(canvas.width, y);
+            ctx.lineTo(canvas.width / this.mapZoom, y);
             ctx.stroke();
         }
         ctx.globalAlpha = 1.0;
         
-        // Draw compass rose
-        this.drawCompass(ctx, centerX, centerY);
-        
-        // Draw range circles
+        // Draw range circles (transformed)
         ctx.strokeStyle = '#27ae60';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 / this.mapZoom;
         ctx.globalAlpha = 0.6;
         for (let radius = 40; radius <= 140; radius += 35) {
             ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+            ctx.arc(transformedCenterX, transformedCenterY, radius / this.mapZoom, 0, 2 * Math.PI);
             ctx.stroke();
         }
         ctx.globalAlpha = 1.0;
         
-        // Player is always at center (blue dot with pulse effect)
-        this.drawPixelDot(ctx, centerX, centerY, '#3498db', 8);
-        this.drawPixelDot(ctx, centerX, centerY, '#87ceeb', 4);
+        // Player is always at center (blue dot with pulse effect) - in transformed coordinates
+        this.drawPixelDot(ctx, transformedCenterX, transformedCenterY, '#3498db', 8 / this.mapZoom);
+        this.drawPixelDot(ctx, transformedCenterX, transformedCenterY, '#87ceeb', 4 / this.mapZoom);
         ctx.fillStyle = '#ffffff';
-        ctx.font = '10px monospace';
+        ctx.font = `${10 / this.mapZoom}px monospace`;
         ctx.textAlign = 'center';
-        ctx.fillText('YOU', centerX, centerY + 20);
+        ctx.fillText('YOU', transformedCenterX, transformedCenterY + 20 / this.mapZoom);
         
-        // Calculate target position relative to player
+        // Calculate target position relative to player (in transformed coordinates)
         if (this.userLocation) {
             const distance = this.calculateDistance(
                 this.userLocation.lat,
@@ -849,55 +853,64 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             const maxDistance = 1000; // 1km
             const pixelDistance = Math.min((distance / maxDistance) * 140, 140);
             
-            // Convert bearing to canvas coordinates
-            const targetX = centerX + Math.sin(bearing) * pixelDistance;
-            const targetY = centerY - Math.cos(bearing) * pixelDistance;
+            // Convert bearing to canvas coordinates (in transformed space)
+            const targetX = transformedCenterX + Math.sin(bearing) * (pixelDistance / this.mapZoom);
+            const targetY = transformedCenterY - Math.cos(bearing) * (pixelDistance / this.mapZoom);
             
             // Draw target (red dot with glow)
-            this.drawPixelDot(ctx, targetX, targetY, '#e74c3c', 8);
-            this.drawPixelDot(ctx, targetX, targetY, '#ff6b6b', 4);
+            this.drawPixelDot(ctx, targetX, targetY, '#e74c3c', 8 / this.mapZoom);
+            this.drawPixelDot(ctx, targetX, targetY, '#ff6b6b', 4 / this.mapZoom);
             
             // Add target label
             ctx.fillStyle = '#ffffff';
-            ctx.font = '8px monospace';
+            ctx.font = `${8 / this.mapZoom}px monospace`;
             ctx.textAlign = 'center';
-            ctx.fillText('TARGET', targetX, targetY + 18);
+            ctx.fillText('TARGET', targetX, targetY + 18 / this.mapZoom);
             
             // Draw directional arrow if target is off-map
             if (pixelDistance >= 140) {
-                this.drawDirectionalArrow(ctx, centerX, centerY, bearing);
+                this.drawDirectionalArrow(ctx, transformedCenterX, transformedCenterY, bearing);
             }
             
             // Draw connecting line
             ctx.strokeStyle = '#f39c12';
-            ctx.lineWidth = 2;
+            ctx.lineWidth = 2 / this.mapZoom;
             ctx.globalAlpha = 0.7;
-            ctx.setLineDash([5, 5]);
+            ctx.setLineDash([5 / this.mapZoom, 5 / this.mapZoom]);
             ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
+            ctx.moveTo(transformedCenterX, transformedCenterY);
             ctx.lineTo(targetX, targetY);
             ctx.stroke();
             ctx.setLineDash([]);
             ctx.globalAlpha = 1.0;
             
-            // Draw distance text on map
-            ctx.fillStyle = '#ecf0f1';
-            ctx.font = '10px monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(`${distance.toFixed(0)}m`, centerX, canvas.height - 10);
         } else {
             // Show target at approximate location if no GPS yet
-            this.drawPixelDot(ctx, centerX, centerY - 60, '#e74c3c', 8);
-            this.drawPixelDot(ctx, centerX, centerY - 60, '#ff6b6b', 4);
+            this.drawPixelDot(ctx, transformedCenterX, transformedCenterY - 60 / this.mapZoom, '#e74c3c', 8 / this.mapZoom);
+            this.drawPixelDot(ctx, transformedCenterX, transformedCenterY - 60 / this.mapZoom, '#ff6b6b', 4 / this.mapZoom);
             
             ctx.fillStyle = '#ffd700';
-            ctx.font = '12px monospace';
+            ctx.font = `${12 / this.mapZoom}px monospace`;
             ctx.textAlign = 'center';
-            ctx.fillText('🔍 SEARCHING GPS...', centerX, canvas.height - 15);
+            ctx.fillText('🔍 SEARCHING GPS...', transformedCenterX, (canvas.height - 15) / this.mapZoom);
         }
         
         // Restore canvas transformation
         ctx.restore();
+        
+        // Draw distance text on map (not affected by zoom/pan)
+        if (this.userLocation) {
+            const distance = this.calculateDistance(
+                this.userLocation.lat,
+                this.userLocation.lng,
+                this.targetLocation.lat,
+                this.targetLocation.lng
+            );
+            ctx.fillStyle = '#ecf0f1';
+            ctx.font = '12px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(`Distance: ${distance.toFixed(0)}m`, centerX, canvas.height - 10);
+        }
         
         // Draw zoom controls on top (not affected by zoom/pan)
         this.drawMapControls(ctx, canvas.width, canvas.height);
@@ -1573,16 +1586,16 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     }
 
     drawDirectionalArrow(ctx, centerX, centerY, bearing) {
-        const arrowRadius = 130;
+        const arrowRadius = 130 / this.mapZoom;
         const arrowX = centerX + Math.sin(bearing) * arrowRadius;
         const arrowY = centerY - Math.cos(bearing) * arrowRadius;
         
         ctx.fillStyle = '#f39c12';
         ctx.strokeStyle = '#e67e22';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2 / this.mapZoom;
         
         // Draw arrow pointing towards target
-        const arrowSize = 8;
+        const arrowSize = 8 / this.mapZoom;
         ctx.beginPath();
         ctx.moveTo(arrowX, arrowY);
         ctx.lineTo(arrowX - arrowSize * Math.sin(bearing - Math.PI/6), arrowY + arrowSize * Math.cos(bearing - Math.PI/6));
