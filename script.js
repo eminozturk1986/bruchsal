@@ -683,13 +683,17 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         const centerY = canvas.height / 2;
         
         // Clear canvas
-        ctx.fillStyle = '#2c3e50';
+        ctx.fillStyle = '#1a1a1a';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Draw grid pattern (8-bit style)
-        ctx.strokeStyle = '#34495e';
+        // Draw 8-bit street pattern
+        this.draw8BitStreets(ctx, canvas.width, canvas.height);
+        
+        // Draw grid overlay (subtle)
+        ctx.strokeStyle = '#333333';
         ctx.lineWidth = 1;
-        const gridSize = 20;
+        ctx.globalAlpha = 0.3;
+        const gridSize = 25;
         
         for (let x = 0; x <= canvas.width; x += gridSize) {
             ctx.beginPath();
@@ -704,6 +708,7 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             ctx.lineTo(canvas.width, y);
             ctx.stroke();
         }
+        ctx.globalAlpha = 1.0;
         
         // Draw compass rose
         this.drawCompass(ctx, centerX, centerY);
@@ -711,18 +716,21 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         // Draw range circles
         ctx.strokeStyle = '#27ae60';
         ctx.lineWidth = 2;
-        for (let radius = 30; radius <= 80; radius += 25) {
+        ctx.globalAlpha = 0.6;
+        for (let radius = 40; radius <= 140; radius += 35) {
             ctx.beginPath();
             ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
             ctx.stroke();
         }
+        ctx.globalAlpha = 1.0;
         
-        // Player is always at center (blue dot)
-        this.drawPixelDot(ctx, centerX, centerY, '#3498db', 6);
-        ctx.fillStyle = '#ecf0f1';
-        ctx.font = '8px monospace';
+        // Player is always at center (blue dot with pulse effect)
+        this.drawPixelDot(ctx, centerX, centerY, '#3498db', 8);
+        this.drawPixelDot(ctx, centerX, centerY, '#87ceeb', 4);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('YOU', centerX, centerY + 15);
+        ctx.fillText('YOU', centerX, centerY + 20);
         
         // Calculate target position relative to player
         if (this.userLocation) {
@@ -741,21 +749,40 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                 this.targetLocation.lng
             );
             
-            // Map distance to pixel distance (max 80px radius)
+            // Map distance to pixel distance (max 140px radius for larger map)
             const maxDistance = 1000; // 1km
-            const pixelDistance = Math.min((distance / maxDistance) * 80, 80);
+            const pixelDistance = Math.min((distance / maxDistance) * 140, 140);
             
             // Convert bearing to canvas coordinates
             const targetX = centerX + Math.sin(bearing) * pixelDistance;
             const targetY = centerY - Math.cos(bearing) * pixelDistance;
             
-            // Draw target (red dot)
-            this.drawPixelDot(ctx, targetX, targetY, '#e74c3c', 5);
+            // Draw target (red dot with glow)
+            this.drawPixelDot(ctx, targetX, targetY, '#e74c3c', 8);
+            this.drawPixelDot(ctx, targetX, targetY, '#ff6b6b', 4);
+            
+            // Add target label
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '8px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('TARGET', targetX, targetY + 18);
             
             // Draw directional arrow if target is off-map
-            if (pixelDistance >= 80) {
+            if (pixelDistance >= 140) {
                 this.drawDirectionalArrow(ctx, centerX, centerY, bearing);
             }
+            
+            // Draw connecting line
+            ctx.strokeStyle = '#f39c12';
+            ctx.lineWidth = 2;
+            ctx.globalAlpha = 0.7;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(targetX, targetY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.globalAlpha = 1.0;
             
             // Draw distance text on map
             ctx.fillStyle = '#ecf0f1';
@@ -764,12 +791,13 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             ctx.fillText(`${distance.toFixed(0)}m`, centerX, canvas.height - 10);
         } else {
             // Show target at approximate location if no GPS yet
-            this.drawPixelDot(ctx, centerX, centerY - 40, '#e74c3c', 5);
+            this.drawPixelDot(ctx, centerX, centerY - 60, '#e74c3c', 8);
+            this.drawPixelDot(ctx, centerX, centerY - 60, '#ff6b6b', 4);
             
-            ctx.fillStyle = '#ecf0f1';
-            ctx.font = '8px monospace';
+            ctx.fillStyle = '#ffd700';
+            ctx.font = '12px monospace';
             ctx.textAlign = 'center';
-            ctx.fillText('SEARCHING GPS...', centerX, canvas.height - 10);
+            ctx.fillText('🔍 SEARCHING GPS...', centerX, canvas.height - 15);
         }
     }
 
@@ -784,26 +812,45 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     }
 
     drawCompass(ctx, centerX, centerY) {
-        const compassSize = 15;
+        const compassSize = 20;
+        
+        // Compass background circle
+        ctx.fillStyle = 'rgba(139, 69, 19, 0.8)';
+        ctx.beginPath();
+        ctx.arc(centerX, centerY - compassSize - 130, 25, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        ctx.strokeStyle = '#daa520';
+        ctx.lineWidth = 2;
+        ctx.stroke();
         
         // North arrow
         ctx.fillStyle = '#e74c3c';
         ctx.beginPath();
-        ctx.moveTo(centerX, centerY - compassSize - 85);
-        ctx.lineTo(centerX - 4, centerY - compassSize - 75);
-        ctx.lineTo(centerX + 4, centerY - compassSize - 75);
+        ctx.moveTo(centerX, centerY - compassSize - 145);
+        ctx.lineTo(centerX - 6, centerY - compassSize - 125);
+        ctx.lineTo(centerX + 6, centerY - compassSize - 125);
+        ctx.closePath();
+        ctx.fill();
+        
+        // South arrow
+        ctx.fillStyle = '#95a5a6';
+        ctx.beginPath();
+        ctx.moveTo(centerX, centerY - compassSize - 115);
+        ctx.lineTo(centerX - 4, centerY - compassSize - 125);
+        ctx.lineTo(centerX + 4, centerY - compassSize - 125);
         ctx.closePath();
         ctx.fill();
         
         // N label
-        ctx.fillStyle = '#ecf0f1';
-        ctx.font = '8px monospace';
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('N', centerX, centerY - compassSize - 65);
+        ctx.fillText('N', centerX, centerY - compassSize - 100);
     }
 
     drawDirectionalArrow(ctx, centerX, centerY, bearing) {
-        const arrowDistance = 70;
+        const arrowDistance = 120;
         const arrowX = centerX + Math.sin(bearing) * arrowDistance;
         const arrowY = centerY - Math.cos(bearing) * arrowDistance;
         
@@ -811,16 +858,27 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         ctx.translate(arrowX, arrowY);
         ctx.rotate(bearing);
         
-        // Draw arrow pointing towards target
+        // Draw larger arrow pointing towards target
         ctx.fillStyle = '#f39c12';
         ctx.beginPath();
-        ctx.moveTo(0, -8);
-        ctx.lineTo(-5, 3);
-        ctx.lineTo(5, 3);
+        ctx.moveTo(0, -12);
+        ctx.lineTo(-8, 5);
+        ctx.lineTo(8, 5);
         ctx.closePath();
         ctx.fill();
         
+        // Add arrow outline
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
         ctx.restore();
+        
+        // Add distance text near arrow
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('TARGET', arrowX, arrowY + 20);
     }
 
     calculateBearing(lat1, lng1, lat2, lng2) {
@@ -833,6 +891,120 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                   Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
         
         return Math.atan2(y, x);
+    }
+
+    draw8BitStreets(ctx, width, height) {
+        // Draw 8-bit style street pattern with better visibility
+        
+        // Draw bright street base first
+        ctx.fillStyle = '#505050';
+        
+        // Main horizontal streets (bright and wide)
+        for (let y = 40; y < height; y += 80) {
+            ctx.fillRect(0, y - 8, width, 16);
+        }
+        
+        // Main vertical streets (bright and wide)  
+        for (let x = 60; x < width; x += 100) {
+            ctx.fillRect(x - 8, 0, 16, height);
+        }
+        
+        // Add street borders for definition
+        ctx.strokeStyle = '#707070';
+        ctx.lineWidth = 2;
+        
+        // Horizontal street borders
+        for (let y = 40; y < height; y += 80) {
+            ctx.beginPath();
+            ctx.moveTo(0, y - 8);
+            ctx.lineTo(width, y - 8);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, y + 8);
+            ctx.lineTo(width, y + 8);
+            ctx.stroke();
+        }
+        
+        // Vertical street borders
+        for (let x = 60; x < width; x += 100) {
+            ctx.beginPath();
+            ctx.moveTo(x - 8, 0);
+            ctx.lineTo(x - 8, height);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x + 8, 0);
+            ctx.lineTo(x + 8, height);
+            ctx.stroke();
+        }
+        
+        // Add yellow center lines
+        ctx.strokeStyle = '#ffff00';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([6, 6]);
+        
+        // Yellow lines on horizontal streets
+        for (let y = 40; y < height; y += 80) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+        }
+        
+        // Yellow lines on vertical streets
+        for (let x = 60; x < width; x += 100) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, height);
+            ctx.stroke();
+        }
+        ctx.setLineDash([]);
+        
+        // Add visible building blocks
+        ctx.fillStyle = '#404040';
+        const blockSize = 30;
+        
+        // Create building blocks between streets
+        for (let blockX = 0; blockX < 4; blockX++) {
+            for (let blockY = 0; blockY < 4; blockY++) {
+                const x = 20 + blockX * 100;
+                const y = 20 + blockY * 80;
+                
+                // Skip if too close to edges
+                if (x + blockSize > width - 20 || y + blockSize > height - 20) continue;
+                
+                // Draw building
+                ctx.fillRect(x, y, blockSize, blockSize);
+                
+                // Add building outline
+                ctx.strokeStyle = '#606060';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, blockSize, blockSize);
+                
+                // Add random windows
+                ctx.fillStyle = '#ffd700';
+                for (let w = 0; w < 2; w++) {
+                    for (let h = 0; h < 2; h++) {
+                        if (Math.random() > 0.4) {
+                            ctx.fillRect(x + 8 + w * 12, y + 8 + h * 12, 3, 3);
+                        }
+                    }
+                }
+                ctx.fillStyle = '#404040';
+            }
+        }
+        
+        // Add some landmarks
+        ctx.fillStyle = '#8b4513';
+        ctx.fillRect(width/2 - 15, height/2 - 15, 30, 30); // Palace representation
+        ctx.fillStyle = '#daa520';
+        ctx.fillRect(width/2 - 10, height/2 - 10, 20, 20);
+        
+        // Add street names (simplified)
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('PALACE ST', width/2, 25);
+        ctx.fillText('MAIN ST', width/2, height - 10);
     }
 }
 

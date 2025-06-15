@@ -1,5 +1,5 @@
 // Service Worker for Bruchsal Quest PWA
-const CACHE_NAME = 'bruchsal-quest-v1';
+const CACHE_NAME = 'bruchsal-quest-v2';
 const urlsToCache = [
   './',
   './index.html',
