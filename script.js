@@ -675,32 +675,63 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     }
 
     initGoogleMap() {
-        // Default location (Bruchsal)
-        const bruchsal = { lat: 49.1244, lng: 8.5985 };
-        
-        this.map = new google.maps.Map(this.googleMap, {
-            zoom: 16,
-            center: bruchsal,
-            mapTypeId: 'roadmap',
-            disableDefaultUI: true,
-            zoomControl: true,
-            zoomControlOptions: {
-                position: google.maps.ControlPosition.TOP_RIGHT
-            },
-            styles: [
-                {
-                    "featureType": "all",
-                    "elementType": "all",
-                    "stylers": [{"saturation": -20}]
-                }
-            ]
-        });
+        try {
+            // Check if Google Maps is available
+            if (typeof google === 'undefined' || !google.maps) {
+                console.log('Google Maps not available, using fallback');
+                this.initFallbackMap();
+                return;
+            }
 
-        // Center on user location if available
-        if (this.userLocation) {
-            const userPos = { lat: this.userLocation.lat, lng: this.userLocation.lng };
-            this.map.setCenter(userPos);
+            // Default location (Bruchsal)
+            const bruchsal = { lat: 49.1244, lng: 8.5985 };
+            
+            this.map = new google.maps.Map(this.googleMap, {
+                zoom: 16,
+                center: bruchsal,
+                mapTypeId: 'roadmap',
+                disableDefaultUI: true,
+                zoomControl: true,
+                zoomControlOptions: {
+                    position: google.maps.ControlPosition.TOP_RIGHT
+                },
+                styles: [
+                    {
+                        "featureType": "all",
+                        "elementType": "all",
+                        "stylers": [{"saturation": -20}]
+                    }
+                ]
+            });
+
+            // Center on user location if available
+            if (this.userLocation) {
+                const userPos = { lat: this.userLocation.lat, lng: this.userLocation.lng };
+                this.map.setCenter(userPos);
+            }
+        } catch (error) {
+            console.log('Google Maps failed to initialize:', error);
+            this.initFallbackMap();
         }
+    }
+
+    initFallbackMap() {
+        // Create a simple fallback map using OpenStreetMap
+        this.googleMap.innerHTML = `
+            <iframe 
+                width="100%" 
+                height="100%" 
+                frameborder="0" 
+                scrolling="no" 
+                marginheight="0" 
+                marginwidth="0" 
+                src="https://www.openstreetmap.org/export/embed.html?bbox=8.5685,49.1144,8.6285,49.1344&layer=mapnik&marker=49.1244,8.5985"
+                style="border-radius: 8px;">
+            </iframe>
+        `;
+        
+        // Set flag to indicate we're using fallback
+        this.usingFallback = true;
     }
 
 
@@ -709,60 +740,65 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     }
 
     updateGoogleMapMarkers() {
-        if (!this.map) return;
+        // Skip if using fallback map
+        if (this.usingFallback || !this.map) return;
 
-        // Update user location marker
-        if (this.userLocation) {
-            const userPos = { lat: this.userLocation.lat, lng: this.userLocation.lng };
-            
-            if (this.playerMarker) {
-                this.playerMarker.setPosition(userPos);
-            } else {
-                this.playerMarker = new google.maps.Marker({
-                    position: userPos,
-                    map: this.map,
-                    title: 'Your Location',
-                    icon: {
-                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                            <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="10" cy="10" r="8" fill="#3498db" stroke="#ffffff" stroke-width="2"/>
-                                <circle cx="10" cy="10" r="4" fill="#87ceeb"/>
-                            </svg>
-                        `),
-                        scaledSize: new google.maps.Size(20, 20),
-                        anchor: new google.maps.Point(10, 10)
-                    }
-                });
+        try {
+            // Update user location marker
+            if (this.userLocation) {
+                const userPos = { lat: this.userLocation.lat, lng: this.userLocation.lng };
+                
+                if (this.playerMarker) {
+                    this.playerMarker.setPosition(userPos);
+                } else {
+                    this.playerMarker = new google.maps.Marker({
+                        position: userPos,
+                        map: this.map,
+                        title: 'Your Location',
+                        icon: {
+                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                                <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="10" cy="10" r="8" fill="#3498db" stroke="#ffffff" stroke-width="2"/>
+                                    <circle cx="10" cy="10" r="4" fill="#87ceeb"/>
+                                </svg>
+                            `),
+                            scaledSize: new google.maps.Size(20, 20),
+                            anchor: new google.maps.Point(10, 10)
+                        }
+                    });
+                }
+                
+                // Center map on player
+                this.map.setCenter(userPos);
             }
-            
-            // Center map on player
-            this.map.setCenter(userPos);
-        }
 
-        // Update target location marker
-        if (this.targetLocation) {
-            const targetPos = { lat: this.targetLocation.lat, lng: this.targetLocation.lng };
-            
-            if (this.targetMarker) {
-                this.targetMarker.setPosition(targetPos);
-            } else {
-                this.targetMarker = new google.maps.Marker({
-                    position: targetPos,
-                    map: this.map,
-                    title: 'Target Location',
-                    icon: {
-                        url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                            <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="12" cy="12" r="10" fill="#e74c3c" stroke="#ffffff" stroke-width="2"/>
-                                <circle cx="12" cy="12" r="6" fill="#ff6b6b"/>
-                                <text x="12" y="16" text-anchor="middle" fill="white" font-size="8" font-family="monospace">🎯</text>
-                            </svg>
-                        `),
-                        scaledSize: new google.maps.Size(24, 24),
-                        anchor: new google.maps.Point(12, 12)
-                    }
-                });
+            // Update target location marker
+            if (this.targetLocation) {
+                const targetPos = { lat: this.targetLocation.lat, lng: this.targetLocation.lng };
+                
+                if (this.targetMarker) {
+                    this.targetMarker.setPosition(targetPos);
+                } else {
+                    this.targetMarker = new google.maps.Marker({
+                        position: targetPos,
+                        map: this.map,
+                        title: 'Target Location',
+                        icon: {
+                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="12" cy="12" r="10" fill="#e74c3c" stroke="#ffffff" stroke-width="2"/>
+                                    <circle cx="12" cy="12" r="6" fill="#ff6b6b"/>
+                                    <text x="12" y="16" text-anchor="middle" fill="white" font-size="8" font-family="monospace">🎯</text>
+                                </svg>
+                            `),
+                            scaledSize: new google.maps.Size(24, 24),
+                            anchor: new google.maps.Point(12, 12)
+                        }
+                    });
+                }
             }
+        } catch (error) {
+            console.log('Error updating markers:', error);
         }
     }
 
@@ -810,7 +846,7 @@ let gameInstance = null;
 
 // Global initMap function for Google Maps API
 function initMap() {
-    if (gameInstance && gameInstance.map === null) {
+    if (gameInstance) {
         gameInstance.initGoogleMap();
     }
 }
