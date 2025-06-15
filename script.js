@@ -692,6 +692,7 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                 mapTypeId: 'roadmap',
                 disableDefaultUI: true,
                 zoomControl: true,
+                mapId: 'DEMO_MAP_ID', // Required for AdvancedMarkerElement
                 zoomControlOptions: {
                     position: google.maps.ControlPosition.TOP_RIGHT
                 },
@@ -749,22 +750,36 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                 const userPos = { lat: this.userLocation.lat, lng: this.userLocation.lng };
                 
                 if (this.playerMarker) {
-                    this.playerMarker.setPosition(userPos);
+                    this.playerMarker.position = userPos;
                 } else {
-                    this.playerMarker = new google.maps.Marker({
+                    // Create custom marker element for player
+                    const playerElement = document.createElement('div');
+                    playerElement.innerHTML = `
+                        <div style="
+                            width: 20px; 
+                            height: 20px; 
+                            background: #3498db; 
+                            border: 3px solid #ffffff; 
+                            border-radius: 50%; 
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center;
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                        ">
+                            <div style="
+                                width: 8px; 
+                                height: 8px; 
+                                background: #87ceeb; 
+                                border-radius: 50%;
+                            "></div>
+                        </div>
+                    `;
+                    
+                    this.playerMarker = new google.maps.marker.AdvancedMarkerElement({
                         position: userPos,
                         map: this.map,
                         title: 'Your Location',
-                        icon: {
-                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                                <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="10" cy="10" r="8" fill="#3498db" stroke="#ffffff" stroke-width="2"/>
-                                    <circle cx="10" cy="10" r="4" fill="#87ceeb"/>
-                                </svg>
-                            `),
-                            scaledSize: new google.maps.Size(20, 20),
-                            anchor: new google.maps.Point(10, 10)
-                        }
+                        content: playerElement
                     });
                 }
                 
@@ -777,23 +792,41 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                 const targetPos = { lat: this.targetLocation.lat, lng: this.targetLocation.lng };
                 
                 if (this.targetMarker) {
-                    this.targetMarker.setPosition(targetPos);
+                    this.targetMarker.position = targetPos;
                 } else {
-                    this.targetMarker = new google.maps.Marker({
+                    // Create custom marker element for target
+                    const targetElement = document.createElement('div');
+                    targetElement.innerHTML = `
+                        <div style="
+                            width: 24px; 
+                            height: 24px; 
+                            background: #e74c3c; 
+                            border: 3px solid #ffffff; 
+                            border-radius: 50%; 
+                            display: flex; 
+                            align-items: center; 
+                            justify-content: center;
+                            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                            position: relative;
+                        ">
+                            <div style="
+                                width: 12px; 
+                                height: 12px; 
+                                background: #ff6b6b; 
+                                border-radius: 50%;
+                                display: flex;
+                                align-items: center;
+                                justify-content: center;
+                                font-size: 8px;
+                            ">🎯</div>
+                        </div>
+                    `;
+                    
+                    this.targetMarker = new google.maps.marker.AdvancedMarkerElement({
                         position: targetPos,
                         map: this.map,
                         title: 'Target Location',
-                        icon: {
-                            url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                                <svg width="24" height="24" xmlns="http://www.w3.org/2000/svg">
-                                    <circle cx="12" cy="12" r="10" fill="#e74c3c" stroke="#ffffff" stroke-width="2"/>
-                                    <circle cx="12" cy="12" r="6" fill="#ff6b6b"/>
-                                    <text x="12" y="16" text-anchor="middle" fill="white" font-size="8" font-family="monospace">🎯</text>
-                                </svg>
-                            `),
-                            scaledSize: new google.maps.Size(24, 24),
-                            anchor: new google.maps.Point(12, 12)
-                        }
+                        content: targetElement
                     });
                 }
             }
