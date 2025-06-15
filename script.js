@@ -121,33 +121,49 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             if (line.length === 0) continue;
             
             const values = this.parseCSVLine(line);
-            if (values.length >= 8 && values[0].length > 0) {
-                const choices = {
-                    A: values[1],
-                    B: values[2],
-                    C: values[3],
-                    D: values[4]
+            if (values.length >= 9 && values[0].length > 0) {
+                const questionType = values[8] || 'multiple_choice';
+                const extraData = values[9] || '';
+                
+                let questionData = {
+                    question: values[0],
+                    correctAnswerText: values[5],
+                    latitude: parseFloat(values[6]),
+                    longitude: parseFloat(values[7]),
+                    type: questionType,
+                    extraData: extraData
                 };
                 
-                // Find which choice matches the correct answer text
-                const correctAnswerText = values[5];
-                let correctLetter = 'A'; // default fallback
-                
-                for (let letter of ['A', 'B', 'C', 'D']) {
-                    if (choices[letter] === correctAnswerText) {
-                        correctLetter = letter;
-                        break;
+                if (questionType === 'multiple_choice') {
+                    const choices = {
+                        A: values[1],
+                        B: values[2],
+                        C: values[3],
+                        D: values[4]
+                    };
+                    
+                    // Find which choice matches the correct answer text
+                    const correctAnswerText = values[5];
+                    let correctLetter = 'A'; // default fallback
+                    
+                    for (let letter of ['A', 'B', 'C', 'D']) {
+                        if (choices[letter] === correctAnswerText) {
+                            correctLetter = letter;
+                            break;
+                        }
                     }
+                    
+                    questionData.choices = choices;
+                    questionData.correctAnswer = correctLetter;
+                } else if (questionType === 'picture_match') {
+                    questionData.options = [values[1], values[2], values[3], values[4]];
+                } else if (questionType === 'word_puzzle') {
+                    questionData.scrambledWord = extraData;
+                } else if (questionType === 'connect_puzzle') {
+                    questionData.pieces = [values[1], values[2], values[3], values[4]];
                 }
                 
-                this.questions.push({
-                    question: values[0],
-                    choices: choices,
-                    correctAnswer: correctLetter,
-                    correctAnswerText: correctAnswerText,
-                    latitude: parseFloat(values[6]),
-                    longitude: parseFloat(values[7])
-                });
+                this.questions.push(questionData);
             }
         }
         
@@ -216,19 +232,276 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         
         this.questionText.textContent = this.currentQuestion.question;
         
+        // Clear any previous interactive elements
+        this.clearInteractiveElements();
+        
+        // Display question based on type
+        switch (this.currentQuestion.type) {
+            case 'multiple_choice':
+                this.displayMultipleChoice();
+                break;
+            case 'picture_match':
+                this.displayPictureMatch();
+                break;
+            case 'word_puzzle':
+                this.displayWordPuzzle();
+                break;
+            case 'connect_puzzle':
+                this.displayConnectPuzzle();
+                break;
+            default:
+                this.displayMultipleChoice();
+        }
+
+        this.updateGameHeader();
+    }
+    
+    clearInteractiveElements() {
+        // Clear any interactive elements from previous questions
+        const interactiveContainer = document.querySelector('.interactive-container');
+        if (interactiveContainer) {
+            interactiveContainer.remove();
+        }
+    }
+    
+    displayMultipleChoice() {
         this.answerButtons.forEach((btn, index) => {
             const choice = String.fromCharCode(65 + index);
             btn.textContent = `${choice}) ${this.currentQuestion.choices[choice]}`;
             btn.className = 'answer-btn';
             btn.disabled = false;
+            btn.style.display = 'block';
         });
-
-        this.updateGameHeader();
+    }
+    
+    displayPictureMatch() {
+        // Hide regular answer buttons
+        this.answerButtons.forEach(btn => btn.style.display = 'none');
+        
+        // Create picture matching interface
+        const container = document.createElement('div');
+        container.className = 'interactive-container picture-match-container';
+        
+        const instructions = document.createElement('div');
+        instructions.className = 'match-instructions';
+        instructions.textContent = 'Click the correct emoji that matches the description in the question!';
+        
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'picture-options';
+        
+        this.currentQuestion.options.forEach((option, index) => {
+            const optionBtn = document.createElement('button');
+            optionBtn.className = 'picture-option';
+            optionBtn.textContent = option;
+            optionBtn.addEventListener('click', () => this.selectPictureAnswer(option));
+            optionsContainer.appendChild(optionBtn);
+        });
+        
+        container.appendChild(instructions);
+        container.appendChild(optionsContainer);
+        
+        // Insert after question text
+        this.questionText.parentNode.insertBefore(container, this.questionText.nextSibling);
+    }
+    
+    displayWordPuzzle() {
+        // Hide regular answer buttons
+        this.answerButtons.forEach(btn => btn.style.display = 'none');
+        
+        const container = document.createElement('div');
+        container.className = 'interactive-container word-puzzle-container';
+        
+        const instructions = document.createElement('div');
+        instructions.className = 'puzzle-instructions';
+        instructions.textContent = 'Unscramble the letters to spell the location name:';
+        
+        const scrambledWord = this.currentQuestion.scrambledWord || 'DEVRELBEE';
+        const lettersContainer = document.createElement('div');
+        lettersContainer.className = 'letter-tiles';
+        
+        // Create letter tiles
+        scrambledWord.split('').forEach((letter, index) => {
+            const letterTile = document.createElement('button');
+            letterTile.className = 'letter-tile';
+            letterTile.textContent = letter;
+            letterTile.dataset.index = index;
+            letterTile.addEventListener('click', () => this.toggleLetter(letterTile));
+            lettersContainer.appendChild(letterTile);
+        });
+        
+        const answerContainer = document.createElement('div');
+        answerContainer.className = 'word-answer';
+        answerContainer.innerHTML = '<div class="answer-slots"></div>';
+        
+        const submitBtn = document.createElement('button');
+        submitBtn.className = 'pixel-btn submit-word';
+        submitBtn.textContent = 'SUBMIT ANSWER';
+        submitBtn.addEventListener('click', () => this.submitWordAnswer());
+        
+        container.appendChild(instructions);
+        container.appendChild(lettersContainer);
+        container.appendChild(answerContainer);
+        container.appendChild(submitBtn);
+        
+        this.questionText.parentNode.insertBefore(container, this.questionText.nextSibling);
+        
+        this.selectedLetters = [];
+    }
+    
+    displayConnectPuzzle() {
+        // Hide regular answer buttons
+        this.answerButtons.forEach(btn => btn.style.display = 'none');
+        
+        const container = document.createElement('div');
+        container.className = 'interactive-container connect-puzzle-container';
+        
+        const instructions = document.createElement('div');
+        instructions.className = 'puzzle-instructions';
+        instructions.textContent = 'Connect the puzzle pieces in the correct order:';
+        
+        const puzzleArea = document.createElement('div');
+        puzzleArea.className = 'puzzle-area';
+        
+        // Create simplified connect-the-dots puzzle
+        const dots = [
+            { x: 50, y: 50, label: '1' },
+            { x: 150, y: 50, label: '2' },
+            { x: 150, y: 150, label: '3' },
+            { x: 50, y: 150, label: '4' }
+        ];
+        
+        dots.forEach(dot => {
+            const dotElement = document.createElement('div');
+            dotElement.className = 'puzzle-dot';
+            dotElement.style.left = dot.x + 'px';
+            dotElement.style.top = dot.y + 'px';
+            dotElement.textContent = dot.label;
+            dotElement.addEventListener('click', () => this.connectDot(dot.label));
+            puzzleArea.appendChild(dotElement);
+        });
+        
+        const resultArea = document.createElement('div');
+        resultArea.className = 'puzzle-result';
+        resultArea.textContent = 'Connect: ';
+        
+        container.appendChild(instructions);
+        container.appendChild(puzzleArea);
+        container.appendChild(resultArea);
+        
+        this.questionText.parentNode.insertBefore(container, this.questionText.nextSibling);
+        
+        this.connectedDots = [];
     }
 
     updateGameHeader() {
         this.scoreElement.textContent = this.score;
         this.currentQuestionElement.textContent = this.currentQuestionIndex + 1;
+    }
+    
+    selectPictureAnswer(selectedOption) {
+        const isCorrect = selectedOption === this.currentQuestion.correctAnswerText;
+        
+        // Visual feedback
+        const options = document.querySelectorAll('.picture-option');
+        options.forEach(option => {
+            option.disabled = true;
+            if (option.textContent === this.currentQuestion.correctAnswerText) {
+                option.classList.add('correct');
+            } else if (option.textContent === selectedOption && !isCorrect) {
+                option.classList.add('wrong');
+            }
+        });
+        
+        if (isCorrect) {
+            this.score += 100;
+            this.playSound('correct');
+            setTimeout(() => this.startGPSChallenge(), 1500);
+        } else {
+            this.playSound('wrong');
+            setTimeout(() => this.endGame(false), 1500);
+        }
+    }
+    
+    toggleLetter(letterTile) {
+        if (letterTile.classList.contains('selected')) {
+            // Remove from selection
+            letterTile.classList.remove('selected');
+            const index = this.selectedLetters.indexOf(letterTile.textContent);
+            if (index > -1) {
+                this.selectedLetters.splice(index, 1);
+            }
+        } else {
+            // Add to selection
+            letterTile.classList.add('selected');
+            this.selectedLetters.push(letterTile.textContent);
+        }
+        
+        // Update answer display
+        const answerSlots = document.querySelector('.answer-slots');
+        answerSlots.textContent = this.selectedLetters.join('');
+    }
+    
+    submitWordAnswer() {
+        const userAnswer = this.selectedLetters.join('').toLowerCase();
+        const correctAnswer = this.currentQuestion.correctAnswerText.toLowerCase();
+        const isCorrect = userAnswer === correctAnswer;
+        
+        // Visual feedback
+        const submitBtn = document.querySelector('.submit-word');
+        const answerSlots = document.querySelector('.answer-slots');
+        
+        if (isCorrect) {
+            answerSlots.classList.add('correct');
+            submitBtn.textContent = 'CORRECT!';
+            this.score += 100;
+            this.playSound('correct');
+            setTimeout(() => this.startGPSChallenge(), 1500);
+        } else {
+            answerSlots.classList.add('wrong');
+            submitBtn.textContent = 'WRONG! Answer: ' + this.currentQuestion.correctAnswerText;
+            this.playSound('wrong');
+            setTimeout(() => this.endGame(false), 1500);
+        }
+        
+        submitBtn.disabled = true;
+    }
+    
+    connectDot(dotLabel) {
+        this.connectedDots.push(dotLabel);
+        
+        // Update display
+        const resultArea = document.querySelector('.puzzle-result');
+        resultArea.textContent = 'Connect: ' + this.connectedDots.join(' → ');
+        
+        // Mark dot as connected
+        const dotElements = document.querySelectorAll('.puzzle-dot');
+        dotElements.forEach(dot => {
+            if (dot.textContent === dotLabel) {
+                dot.classList.add('connected');
+            }
+        });
+        
+        // Check if puzzle is complete (simple: connect all 4 dots in order)
+        if (this.connectedDots.length === 4) {
+            const correctOrder = ['1', '2', '3', '4'];
+            const isCorrect = JSON.stringify(this.connectedDots) === JSON.stringify(correctOrder);
+            
+            if (isCorrect) {
+                resultArea.textContent = 'CORRECT! Palace outline complete!';
+                resultArea.classList.add('correct');
+                this.score += 100;
+                this.playSound('correct');
+                setTimeout(() => this.startGPSChallenge(), 1500);
+            } else {
+                resultArea.textContent = 'Wrong order! Try again.';
+                resultArea.classList.add('wrong');
+                this.playSound('wrong');
+                setTimeout(() => this.endGame(false), 1500);
+            }
+            
+            // Disable further clicks
+            dotElements.forEach(dot => dot.style.pointerEvents = 'none');
+        }
     }
 
     selectAnswer(selectedAnswer) {

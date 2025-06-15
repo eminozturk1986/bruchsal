@@ -580,3 +580,187 @@ body {
         height: 35px;
     }
 }
+
+/* Interactive Question Styles */
+.interactive-container {
+    margin: 30px 0;
+    padding: 20px;
+    background: linear-gradient(45deg, rgba(139, 69, 19, 0.8), rgba(160, 82, 45, 0.8));
+    border: 3px solid #daa520;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(218, 165, 32, 0.4);
+}
+
+.match-instructions, .puzzle-instructions {
+    color: #ffd700;
+    font-size: 1rem;
+    text-align: center;
+    margin-bottom: 20px;
+    text-shadow: 1px 1px 0px #8b4513;
+}
+
+/* Picture Match Styles */
+.picture-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.picture-option {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 2rem;
+    padding: 20px;
+    background: linear-gradient(45deg, #b8860b, #daa520);
+    color: #8b4513;
+    border: 3px solid #8b4513;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 0 10px rgba(139, 69, 19, 0.3);
+}
+
+.picture-option:hover {
+    background: linear-gradient(45deg, #cd853f, #daa520);
+    transform: scale(1.05);
+}
+
+.picture-option.correct {
+    background: linear-gradient(45deg, #228b22, #32cd32);
+    border-color: #006400;
+    color: #f5f5dc;
+    animation: correct-flash 0.5s;
+}
+
+.picture-option.wrong {
+    background: linear-gradient(45deg, #8b0000, #dc143c);
+    border-color: #8b0000;
+    color: #f5f5dc;
+    animation: wrong-shake 0.5s;
+}
+
+/* Word Puzzle Styles */
+.letter-tiles {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin: 20px 0;
+}
+
+.letter-tile {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.2rem;
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(45deg, #b8860b, #daa520);
+    color: #8b4513;
+    border: 3px solid #8b4513;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.letter-tile:hover {
+    transform: scale(1.1);
+}
+
+.letter-tile.selected {
+    background: linear-gradient(45deg, #cd853f, #f39c12);
+    transform: scale(0.9);
+    border-color: #e67e22;
+}
+
+.word-answer {
+    text-align: center;
+    margin: 20px 0;
+}
+
+.answer-slots {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 1.5rem;
+    color: #ffd700;
+    background: rgba(139, 69, 19, 0.5);
+    padding: 15px;
+    border: 2px solid #daa520;
+    border-radius: 8px;
+    min-height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 1px 1px 0px #8b4513;
+}
+
+.answer-slots.correct {
+    background: rgba(34, 139, 34, 0.7);
+    border-color: #228b22;
+    color: #90ee90;
+}
+
+.answer-slots.wrong {
+    background: rgba(139, 0, 0, 0.7);
+    border-color: #8b0000;
+    color: #ffb6c1;
+}
+
+.submit-word {
+    margin-top: 15px;
+}
+
+/* Connect Puzzle Styles */
+.puzzle-area {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 20px auto;
+    background: rgba(44, 62, 80, 0.5);
+    border: 2px solid #daa520;
+    border-radius: 8px;
+}
+
+.puzzle-dot {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    background: linear-gradient(45deg, #b8860b, #daa520);
+    border: 2px solid #8b4513;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.8rem;
+    color: #8b4513;
+    transition: all 0.2s;
+    transform: translate(-50%, -50%);
+}
+
+.puzzle-dot:hover {
+    transform: translate(-50%, -50%) scale(1.2);
+}
+
+.puzzle-dot.connected {
+    background: linear-gradient(45deg, #228b22, #32cd32);
+    border-color: #006400;
+    color: #f5f5dc;
+}
+
+.puzzle-result {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 0.9rem;
+    color: #ffd700;
+    text-shadow: 1px 1px 0px #8b4513;
+}
+
+.puzzle-result.correct {
+    color: #90ee90;
+}
+
+.puzzle-result.wrong {
+    color: #ffb6c1;
+}

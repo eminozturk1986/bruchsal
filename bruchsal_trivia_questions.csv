@@ -1,26 +1,9 @@
-Question,Choice A,Choice B,Choice C,Choice D,Correct Answer,Latitude,Longitude
-Which Baroque palace in Bruchsal features an ornate Rococo staircase and now houses two museums?,Schlossgarten Bruchsal,Bruchsal Palace,Michaelskapelle,Belvedere,Bruchsal Palace,49.108,8.593
-What hilltop chapel offers a panoramic view over Bruchsal?,Belvedere,Peterskirche,Stadtgarten,Andreas-Staffel,Belvedere,49.111,8.595
-Which church in Bruchsal survived WWII and was designed by Balthasar Neumann?,Hofkirche Bruchsal,St. Paulusheim,Peterskirche (St. Peter),Stadtkirche 'Unsere Liebe Frau',Peterskirche (St. Peter),49.1086,8.596
-What is the name of the historic fountain in Stadtgarten honoring Ferdinand Keller?,Amalienbrunnen,Narrenschiff,Ferdinand‑Keller‑Brunnen,Amalienbrunnen,Ferdinand‑Keller‑Brunnen,49.109,8.594
-What medieval tower is the only remnant of the Old Castle in Bruchsal?,Bergfried,Große Brücke,Technisches Rathaus,Andreas-Staffel,Bergfried,49.11,8.595
-Where can you play mini-golf in the lower Schlossgarten area?,Gartengolf Bruchsal,Bürgerpark,Bürgerzentrum,Stadtgarten,Gartengolf Bruchsal,49.1095,8.5945
-What museum at the palace is dedicated to mechanical musical instruments?,Heimatmuseum Untergrombach,Deutsches Musikautomaten Museum,Bürgerzentrum,Schlossgarten,Deutsches Musikautomaten Museum,49.108,8.593
-Which structure spans the Saalbach and features a statue of St. Nepomuk?,Große Brücke,Klosterstraße,Nepomukbrücke,Kleine Venedig,Nepomukbrücke,49.1092,8.594
-What is the name of the panoramic staircase called Andrew’s Stairs?,Andreas-Staffel,Belvedere,Bergfried,Narrenschiff,Andreas-Staffel,49.1105,8.597
-"What public city garden was laid out in 1901, with several fountains and the Belvedere nearby?",Marktbrunnen,Stadtgarten,Schlossgarten,Bürgerpark,Stadtgarten,49.109,8.594
-🎯 You're looking for the "crown jewel of all Baroque staircases" - where would a master architect showcase this masterpiece?,Town Hall,Bruchsal Palace,Railway Station,Market Square,Bruchsal Palace,49.108,8.593
-📸 For the perfect Instagram shot of Bruchsal's skyline and Rhine valley, where should photographers climb?,St. Peter's Tower,Belvedere,Palace Roof,Water Tower,Belvedere,49.111,8.595
-🎵 Where can you hear the enchanting melodies of centuries-old mechanical orchestras and music boxes?,Town Museum,Deutsches Musikautomaten Museum,Concert Hall,Palace Chapel,Deutsches Musikautomaten Museum,49.108,8.593
-🧩 PUZZLE: Built in 1720s + Bombed in 1945 + Reconstructed perfectly + Houses music museum = ?,City Church,Train Station,Bruchsal Palace,Old Bridge,Bruchsal Palace,49.108,8.593
-🎭 If you were a tour guide and wanted to tell the story of the last surviving medieval castle in Bruchsal, where would you take visitors?,Palace Gardens,Bergfried,New Town Hall,Market Square,Bergfried,49.11,8.595
-🔍 DETECTIVE CLUE: Follow the path where statues of four seasons guard the way to a Baroque masterpiece...,Stadtgarten,Schlossgarten,Belvedere Park,Cemetery,Schlossgarten,49.108,8.593
-🎨 Artists often paint this location for its perfect blend of water, bridge architecture, and religious sculpture - where is it?,Palace Bridge,Nepomukbrücke,Railway Bridge,Garden Bridge,Nepomukbrücke,49.1092,8.594
-⏰ At sunset, where do locals gather for the most romantic view over the city and distant Rhine plains?,Palace Terrace,Belvedere,Church Tower,Garden Café,Belvedere,49.111,8.595
-🚶 You're following a historical walking trail: Start at the palace → cross the decorated bridge → climb 125 steps → reach a medieval tower. Where do you end?,Andreas-Staffel,Bergfried,Belvedere,St. Peter's,Bergfried,49.11,8.595
-🎪 Where would street performers choose to entertain crowds surrounded by 18th-century baroque architecture?,Market Square,Bruchsal Palace,Train Station,Shopping Center,Bruchsal Palace,49.108,8.593
-🌳 Nature lovers seeking a peaceful stroll among fountains and statues dating from 1901 should visit which green space?,Palace Gardens,Stadtgarten,Forest Park,Cemetery,Stadtgarten,49.109,8.594
-🏌️ Mini-golf enthusiasts can practice their putting skills in the shadow of which famous landmark?,Cathedral,Gartengolf Bruchsal,Sports Center,Shopping Mall,Gartengolf Bruchsal,49.1095,8.5945
-⛪ Which sacred building is called "the miracle of Bruchsal" for surviving WWII bombing when everything else was destroyed?,Cathedral,Peterskirche (St. Peter),Chapel,Monastery,Peterskirche (St. Peter),49.1086,8.596
-🎯 RIDDLE: I was built as a shooting house in the 1750s, now I offer the best views. What am I and where am I?,Observatory,Belvedere,Watch Tower,Castle Keep,Belvedere,49.111,8.595
-🏃 Marathon runners training for hill climbs would practice on which famous stepped street?,Palace Stairs,Andreas-Staffel,Church Steps,Garden Path,Andreas-Staffel,49.1105,8.597
+Question,Choice A,Choice B,Choice C,Choice D,Correct Answer,Latitude,Longitude,Question Type,Extra Data
+Which Baroque palace in Bruchsal features an ornate Rococo staircase and now houses two museums?,Schlossgarten Bruchsal,Bruchsal Palace,Michaelskapelle,Belvedere,Bruchsal Palace,49.108,8.593,multiple_choice,
+What hilltop chapel offers a panoramic view over Bruchsal?,Belvedere,Peterskirche,Stadtgarten,Andreas-Staffel,Belvedere,49.111,8.595,multiple_choice,
+Which church in Bruchsal survived WWII and was designed by Balthasar Neumann?,Hofkirche Bruchsal,St. Paulusheim,Peterskirche (St. Peter),Stadtkirche 'Unsere Liebe Frau',Peterskirche (St. Peter),49.1086,8.596,multiple_choice,
+What is the name of the historic fountain in Stadtgarten honoring Ferdinand Keller?,Amalienbrunnen,Narrenschiff,Ferdinand‑Keller‑Brunnen,Amalienbrunnen,Ferdinand‑Keller‑Brunnen,49.109,8.594,multiple_choice,
+What medieval tower is the only remnant of the Old Castle in Bruchsal?,Bergfried,Große Brücke,Technisches Rathaus,Andreas-Staffel,Bergfried,49.11,8.595,multiple_choice,
+Match the landmark to its description: Famous baroque staircase,🏰 Palace,🎵 Music Museum,⛪ Church,🗼 Tower,🏰 Palace,49.108,8.593,picture_match,🏰=Bruchsal Palace|🎵=Music Museum|⛪=Church|🗼=Tower
+Unscramble the letters to find this hilltop location: DEVRELBEE,,,,,Belvedere,49.111,8.595,word_puzzle,DEVRELBEE
+Draw lines to connect these pieces and reveal the landmark,Piece 1,Piece 2,Piece 3,Piece 4,Bruchsal Palace,49.108,8.593,connect_puzzle,palace_outline
