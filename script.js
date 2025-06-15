@@ -717,32 +717,83 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     }
 
     initFallbackMap() {
-        // Create a simple fallback map using OpenStreetMap
+        // Create a dynamic fallback map using OpenStreetMap
+        const targetLat = this.targetLocation ? this.targetLocation.lat : 49.1244;
+        const targetLng = this.targetLocation ? this.targetLocation.lng : 8.5985;
+        
+        // Create bounding box around the target location
+        const padding = 0.01; // Adjust zoom level
+        const bbox = [
+            targetLng - padding,
+            targetLat - padding,
+            targetLng + padding,
+            targetLat + padding
+        ].join(',');
+        
         this.googleMap.innerHTML = `
-            <iframe 
-                width="100%" 
-                height="100%" 
-                frameborder="0" 
-                scrolling="no" 
-                marginheight="0" 
-                marginwidth="0" 
-                src="https://www.openstreetmap.org/export/embed.html?bbox=8.5685,49.1144,8.6285,49.1344&layer=mapnik&marker=49.1244,8.5985"
-                style="border-radius: 8px;">
-            </iframe>
+            <div style="position: relative; width: 100%; height: 100%;">
+                <iframe 
+                    width="100%" 
+                    height="100%" 
+                    frameborder="0" 
+                    scrolling="no" 
+                    marginheight="0" 
+                    marginwidth="0" 
+                    src="https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${targetLat},${targetLng}"
+                    style="border-radius: 8px;">
+                </iframe>
+                <div id="fallback-info" style="
+                    position: absolute; 
+                    top: 10px; 
+                    left: 10px; 
+                    background: rgba(0,0,0,0.7); 
+                    color: white; 
+                    padding: 8px; 
+                    border-radius: 4px; 
+                    font-size: 12px;
+                    max-width: 200px;
+                ">
+                    📍 Target: ${targetLat.toFixed(4)}, ${targetLng.toFixed(4)}<br>
+                    📍 Your location updates below
+                </div>
+            </div>
         `;
         
         // Set flag to indicate we're using fallback
         this.usingFallback = true;
     }
 
+    updateFallbackMapInfo() {
+        const infoDiv = document.getElementById('fallback-info');
+        if (infoDiv && this.userLocation && this.targetLocation) {
+            const distance = this.calculateDistance(
+                this.userLocation.lat,
+                this.userLocation.lng,
+                this.targetLocation.lat,
+                this.targetLocation.lng
+            );
+            
+            infoDiv.innerHTML = `
+                📍 Target: ${this.targetLocation.lat.toFixed(4)}, ${this.targetLocation.lng.toFixed(4)}<br>
+                📍 You: ${this.userLocation.lat.toFixed(4)}, ${this.userLocation.lng.toFixed(4)}<br>
+                📏 Distance: ${distance.toFixed(0)}m
+            `;
+        }
+    }
 
     updateGPSMap() {
         this.updateGoogleMapMarkers();
     }
 
     updateGoogleMapMarkers() {
-        // Skip if using fallback map
-        if (this.usingFallback || !this.map) return;
+        // Update fallback map info if using fallback
+        if (this.usingFallback) {
+            this.updateFallbackMapInfo();
+            return;
+        }
+        
+        // Skip if no Google Maps
+        if (!this.map) return;
 
         try {
             // Update user location marker
