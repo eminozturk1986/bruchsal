@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bruchsal Quest - 8-bit Trivia Adventure</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3498db">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="Bruchsal Quest">
+    
+    <!-- Icons for different devices -->
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Sound Toggle Button -->
+        <button id="sound-toggle" class="sound-toggle">🔊</button>
+        
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen active">
+            <div class="pixel-title">
+                <h1>BRUCHSAL QUEST</h1>
+                <p class="subtitle">8-bit Trivia Adventure</p>
+            </div>
+            <div class="pixel-character">🏛️</div>
+            <button id="start-btn" class="pixel-btn">START GAME</button>
+            <div class="instructions">
+                <p>Answer trivia questions about Bruchsal landmarks</p>
+                <p>Visit the real locations to unlock new questions!</p>
+            </div>
+        </div>
+
+        <!-- Question Screen -->
+        <div id="question-screen" class="screen">
+            <div class="game-header">
+                <div class="score">XP: <span id="score">0</span></div>
+                <div class="progress">Q: <span id="current-question">1</span>/25</div>
+            </div>
+            
+            <div class="question-container">
+                <div class="pixel-character animate" id="character">👑</div>
+                <div class="question-text" id="question-text">Loading question...</div>
+                
+                <div class="answers-grid">
+                    <button class="answer-btn" data-answer="A" id="answer-A">A) Loading...</button>
+                    <button class="answer-btn" data-answer="B" id="answer-B">B) Loading...</button>
+                    <button class="answer-btn" data-answer="C" id="answer-C">C) Loading...</button>
+                    <button class="answer-btn" data-answer="D" id="answer-D">D) Loading...</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GPS Challenge Screen -->
+        <div id="gps-screen" class="screen">
+            <div class="gps-header">
+                <h2>GPS CHALLENGE</h2>
+                <div class="pixel-character pulse">📍</div>
+            </div>
+            
+            <div class="gps-container">
+                <div class="mini-map">
+                    <canvas id="gps-map" width="200" height="200"></canvas>
+                </div>
+                
+                <div class="distance-display">
+                    <p id="distance-text">Calculating distance...</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+                
+                <div class="location-hint">
+                    <p id="location-hint">Go to the location from the previous question!</p>
+                </div>
+            </div>
+            
+            <button id="skip-gps" class="pixel-btn secondary">SKIP (DEBUG)</button>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over-screen" class="screen">
+            <div class="game-over-content">
+                <h2 id="game-over-title">GAME OVER</h2>
+                <div class="pixel-character" id="game-over-character">💀</div>
+                <p id="game-over-message">Try again, brave adventurer!</p>
+                <button id="retry-btn" class="pixel-btn">TRY AGAIN</button>
+                <button id="restart-btn" class="pixel-btn secondary">RESTART GAME</button>
+            </div>
+        </div>
+
+        <!-- Victory Screen -->
+        <div id="victory-screen" class="screen">
+            <div class="victory-content">
+                <h2>VICTORY!</h2>
+                <div class="pixel-character celebrate">🏆</div>
+                <p>You've completed all Bruchsal locations!</p>
+                <div class="final-score">Final XP: <span id="final-score">0</span></div>
+                <button id="play-again-btn" class="pixel-btn">PLAY AGAIN</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="correct-sound" preload="auto">
+        <source src="sounds/correct.wav" type="audio/wav">
+    </audio>
+    <audio id="wrong-sound" preload="auto">
+        <source src="sounds/wrong.wav" type="audio/wav">
+    </audio>
+    <audio id="arrival-sound" preload="auto">
+        <source src="sounds/arrival.wav" type="audio/wav">
+    </audio>
+    <audio id="background-music" loop preload="auto">
+        <source src="sounds/background.mp3" type="audio/mpeg">
+        <source src="sounds/background.wav" type="audio/wav">
+    </audio>
+
+    <script src="script.js"></script>
+</body>
+</html>
