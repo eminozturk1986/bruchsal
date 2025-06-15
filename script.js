@@ -51,6 +51,17 @@ class BruchsalQuest {
         this.locationHint = document.getElementById('location-hint');
         this.gpsMap = document.getElementById('gps-map');
         this.mapCtx = this.gpsMap.getContext('2d');
+        
+        // Map navigation state
+        this.mapZoom = 1.0;
+        this.mapOffsetX = 0;
+        this.mapOffsetY = 0;
+        this.isDragging = false;
+        this.lastMouseX = 0;
+        this.lastMouseY = 0;
+        this.minZoom = 0.5;
+        this.maxZoom = 3.0;
+        this.mapControlsAdded = false;
 
         // Game over elements
         this.gameOverTitle = document.getElementById('game-over-title');
@@ -671,7 +682,85 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         
         // Set up the 8-bit style map
         this.mapCtx.imageSmoothingEnabled = false;
+        
+        // Add map navigation controls
+        this.setupMapControls();
         this.updateGPSMap();
+    }
+
+    setupMapControls() {
+        const canvas = this.gpsMap;
+        
+        // Mouse events for desktop
+        canvas.addEventListener('mousedown', (e) => this.startDrag(e));
+        canvas.addEventListener('mousemove', (e) => this.drag(e));
+        canvas.addEventListener('mouseup', () => this.endDrag());
+        canvas.addEventListener('mouseleave', () => this.endDrag());
+        canvas.addEventListener('wheel', (e) => this.zoom(e));
+        
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', (e) => this.startDrag(e.touches[0]));
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            this.drag(e.touches[0]);
+        });
+        canvas.addEventListener('touchend', () => this.endDrag());
+        
+        // Prevent context menu on right click
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    }
+
+    startDrag(e) {
+        this.isDragging = true;
+        const rect = this.gpsMap.getBoundingClientRect();
+        this.lastMouseX = e.clientX - rect.left;
+        this.lastMouseY = e.clientY - rect.top;
+        this.gpsMap.style.cursor = 'grabbing';
+    }
+
+    drag(e) {
+        if (!this.isDragging) return;
+        
+        const rect = this.gpsMap.getBoundingClientRect();
+        const currentX = e.clientX - rect.left;
+        const currentY = e.clientY - rect.top;
+        
+        const deltaX = currentX - this.lastMouseX;
+        const deltaY = currentY - this.lastMouseY;
+        
+        this.mapOffsetX += deltaX;
+        this.mapOffsetY += deltaY;
+        
+        this.lastMouseX = currentX;
+        this.lastMouseY = currentY;
+        
+        this.updateGPSMap();
+    }
+
+    endDrag() {
+        this.isDragging = false;
+        this.gpsMap.style.cursor = 'grab';
+    }
+
+    zoom(e) {
+        e.preventDefault();
+        
+        const rect = this.gpsMap.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.max(this.minZoom, Math.min(this.maxZoom, this.mapZoom * zoomFactor));
+        
+        if (newZoom !== this.mapZoom) {
+            // Zoom towards mouse position
+            const zoomChange = newZoom / this.mapZoom;
+            this.mapOffsetX = mouseX - (mouseX - this.mapOffsetX) * zoomChange;
+            this.mapOffsetY = mouseY - (mouseY - this.mapOffsetY) * zoomChange;
+            this.mapZoom = newZoom;
+            
+            this.updateGPSMap();
+        }
     }
 
     updateGPSMap() {
@@ -679,6 +768,13 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         
         const canvas = this.gpsMap;
         const ctx = this.mapCtx;
+        
+        // Apply zoom and pan transformations
+        ctx.save();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.translate(this.mapOffsetX, this.mapOffsetY);
+        ctx.scale(this.mapZoom, this.mapZoom);
+        
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         
@@ -799,6 +895,12 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             ctx.textAlign = 'center';
             ctx.fillText('🔍 SEARCHING GPS...', centerX, canvas.height - 15);
         }
+        
+        // Restore canvas transformation
+        ctx.restore();
+        
+        // Draw zoom controls on top (not affected by zoom/pan)
+        this.drawMapControls(ctx, canvas.width, canvas.height);
     }
 
     drawPixelDot(ctx, x, y, color, size) {
@@ -1359,6 +1461,135 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         
         // Add compass
         this.drawMapLegend8Bit(ctx, width, height);
+    }
+
+    drawMapControls(ctx, width, height) {
+        // Draw zoom control buttons in top-right corner (not affected by zoom/pan)
+        const buttonSize = 30;
+        const margin = 10;
+        const startX = width - buttonSize - margin;
+        const zoomInY = margin;
+        const zoomOutY = margin + buttonSize + 5;
+        
+        // Zoom In Button
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(startX, zoomInY, buttonSize, buttonSize);
+        ctx.strokeStyle = '#daa520';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(startX, zoomInY, buttonSize, buttonSize);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('+', startX + buttonSize/2, zoomInY + buttonSize/2 + 5);
+        
+        // Zoom Out Button
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.fillRect(startX, zoomOutY, buttonSize, buttonSize);
+        ctx.strokeStyle = '#daa520';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(startX, zoomOutY, buttonSize, buttonSize);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('−', startX + buttonSize/2, zoomOutY + buttonSize/2 + 5);
+        
+        // Add click handlers for buttons (check if they exist first)
+        if (!this.mapControlsAdded) {
+            this.mapControlsAdded = true;
+            
+            this.gpsMap.addEventListener('click', (e) => {
+                const rect = this.gpsMap.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                // Check if click is on zoom in button
+                if (x >= startX && x <= startX + buttonSize && y >= zoomInY && y <= zoomInY + buttonSize) {
+                    this.zoomIn();
+                }
+                // Check if click is on zoom out button
+                else if (x >= startX && x <= startX + buttonSize && y >= zoomOutY && y <= zoomOutY + buttonSize) {
+                    this.zoomOut();
+                }
+            });
+        }
+        
+        // Draw zoom level indicator
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.fillRect(10, height - 30, 80, 20);
+        ctx.strokeStyle = '#daa520';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(10, height - 30, 80, 20);
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Zoom: ${(this.mapZoom * 100).toFixed(0)}%`, 15, height - 17);
+    }
+
+    zoomIn() {
+        const newZoom = Math.min(this.maxZoom, this.mapZoom * 1.2);
+        if (newZoom !== this.mapZoom) {
+            this.mapZoom = newZoom;
+            this.updateGPSMap();
+        }
+    }
+
+    zoomOut() {
+        const newZoom = Math.max(this.minZoom, this.mapZoom * 0.8);
+        if (newZoom !== this.mapZoom) {
+            this.mapZoom = newZoom;
+            this.updateGPSMap();
+        }
+    }
+
+    drawPixelDot(ctx, x, y, color, size) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x - size/2, y - size/2, size, size);
+    }
+
+    drawCompass(ctx, centerX, centerY) {
+        // Draw simple 8-bit compass
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(centerX + 100, centerY - 100, 20, 0, 2 * Math.PI);
+        ctx.stroke();
+        
+        // North arrow
+        ctx.fillStyle = '#e74c3c';
+        ctx.beginPath();
+        ctx.moveTo(centerX + 100, centerY - 115);
+        ctx.lineTo(centerX + 95, centerY - 105);
+        ctx.lineTo(centerX + 105, centerY - 105);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('N', centerX + 100, centerY - 75);
+    }
+
+    drawDirectionalArrow(ctx, centerX, centerY, bearing) {
+        const arrowRadius = 130;
+        const arrowX = centerX + Math.sin(bearing) * arrowRadius;
+        const arrowY = centerY - Math.cos(bearing) * arrowRadius;
+        
+        ctx.fillStyle = '#f39c12';
+        ctx.strokeStyle = '#e67e22';
+        ctx.lineWidth = 2;
+        
+        // Draw arrow pointing towards target
+        const arrowSize = 8;
+        ctx.beginPath();
+        ctx.moveTo(arrowX, arrowY);
+        ctx.lineTo(arrowX - arrowSize * Math.sin(bearing - Math.PI/6), arrowY + arrowSize * Math.cos(bearing - Math.PI/6));
+        ctx.lineTo(arrowX - arrowSize * Math.sin(bearing + Math.PI/6), arrowY + arrowSize * Math.cos(bearing + Math.PI/6));
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
     }
 }
 

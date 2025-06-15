@@ -380,6 +380,7 @@ body {
     image-rendering: -moz-crisp-edges;
     image-rendering: crisp-edges;
     border-radius: 8px;
+    cursor: grab;
 }
 
 .distance-display {
