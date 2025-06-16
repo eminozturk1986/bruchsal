@@ -592,6 +592,10 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         console.log(`Current location: ${this.userLocation.lat.toFixed(6)}, ${this.userLocation.lng.toFixed(6)}`);
         console.log(`Target location: ${this.targetLocation.lat.toFixed(6)}, ${this.targetLocation.lng.toFixed(6)}`);
         console.log(`Distance: ${distance.toFixed(1)}m, GPS accuracy: ${position.coords.accuracy?.toFixed(1) || 'unknown'}m`);
+        console.log(`Target name: ${this.currentQuestion.correctAnswerText}`);
+        
+        // Also show debug info on screen
+        this.gpsStatusText.innerHTML = `🧭 Distance: ${distance.toFixed(0)}m<br>📍 Your GPS: ${this.userLocation.lat.toFixed(4)}, ${this.userLocation.lng.toFixed(4)}<br>🎯 Target: ${this.targetLocation.lat.toFixed(4)}, ${this.targetLocation.lng.toFixed(4)}<br>📶 Accuracy: ±${position.coords.accuracy?.toFixed(0) || '?'}m`;
 
         this.updateDistanceBar(distance, position.coords.accuracy);
 
