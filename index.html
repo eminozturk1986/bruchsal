@@ -21,7 +21,7 @@
 <body>
     <div id="game-container">
         <!-- Sound Toggle Button -->
-        <button id="sound-toggle" class="sound-toggle">🔊</button>
+        <button id="sound-toggle" class="sound-toggle muted">🔇</button>
         
         <!-- Start Screen -->
         <div id="start-screen" class="screen active">
@@ -79,9 +79,9 @@
                             <div class="distance-bar-text" id="distance-bar-text">0%</div>
                         </div>
                         <div class="distance-bar-info">
-                            <span>🎯 Target</span>
-                            <span id="distance-meters">--- m</span>
                             <span>📍 You</span>
+                            <span id="distance-meters">--- m</span>
+                            <span>🎯 Target</span>
                         </div>
                     </div>
                 </div>
@@ -92,6 +92,46 @@
             </div>
             
             <button id="skip-gps" class="pixel-btn secondary">SKIP (DEBUG)</button>
+        </div>
+
+        <!-- Location Verification Screen -->
+        <div id="verification-screen" class="screen">
+            <div class="verification-content">
+                <h2>LOCATION VERIFIED!</h2>
+                <div class="pixel-character celebration">✅</div>
+                <p>Physical verification completed!</p>
+                <div class="location-name">
+                    <span id="verified-location">Location Name</span>
+                </div>
+                <div class="verification-message">
+                    <p>Great job! You've successfully reached the target location.</p>
+                </div>
+                <button id="continue-btn" class="pixel-btn">CONTINUE TO NEXT QUESTION</button>
+                <button id="stay-btn" class="pixel-btn secondary">STAY HERE</button>
+            </div>
+        </div>
+
+        <!-- Discount Screen -->
+        <div id="discount-screen" class="screen">
+            <div class="discount-content">
+                <h2>🎉 SPECIAL OFFER!</h2>
+                <div class="pixel-character celebration">💰</div>
+                <div class="discount-info">
+                    <h3 id="business-name">Business Name</h3>
+                    <div class="discount-offer">
+                        <p id="discount-text">Special discount available!</p>
+                    </div>
+                    <div class="discount-code">
+                        <p>Show this screen to get:</p>
+                        <div class="code-display" id="discount-code">BRUCHSAL20</div>
+                    </div>
+                </div>
+                <div class="discount-message">
+                    <p>Congratulations! You've discovered a local business discount.</p>
+                </div>
+                <button id="claim-discount-btn" class="pixel-btn">CLAIM DISCOUNT</button>
+                <button id="continue-game-btn" class="pixel-btn secondary">CONTINUE GAME</button>
+            </div>
         </div>
 
         <!-- Game Over Screen -->

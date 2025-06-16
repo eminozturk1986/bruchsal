@@ -10,7 +10,7 @@ class BruchsalQuest {
         this.targetLocation = null;
         this.watchId = null;
         this.musicPlaying = false;
-        this.soundEnabled = true;
+        this.soundEnabled = false;
         
         this.initializeElements();
         this.bindEvents();
@@ -23,12 +23,18 @@ class BruchsalQuest {
         this.startScreen = document.getElementById('start-screen');
         this.questionScreen = document.getElementById('question-screen');
         this.gpsScreen = document.getElementById('gps-screen');
+        this.verificationScreen = document.getElementById('verification-screen');
+        this.discountScreen = document.getElementById('discount-screen');
         this.gameOverScreen = document.getElementById('game-over-screen');
         this.victoryScreen = document.getElementById('victory-screen');
 
         // Buttons
         this.startBtn = document.getElementById('start-btn');
         this.skipGpsBtn = document.getElementById('skip-gps');
+        this.continueBtn = document.getElementById('continue-btn');
+        this.stayBtn = document.getElementById('stay-btn');
+        this.claimDiscountBtn = document.getElementById('claim-discount-btn');
+        this.continueGameBtn = document.getElementById('continue-game-btn');
         this.retryBtn = document.getElementById('retry-btn');
         this.restartBtn = document.getElementById('restart-btn');
         this.playAgainBtn = document.getElementById('play-again-btn');
@@ -52,6 +58,14 @@ class BruchsalQuest {
         this.distanceBarText = document.getElementById('distance-bar-text');
         this.distanceMeters = document.getElementById('distance-meters');
         this.gpsStatusText = document.getElementById('gps-status-text');
+        
+        // Verification elements
+        this.verifiedLocation = document.getElementById('verified-location');
+        
+        // Discount elements
+        this.businessName = document.getElementById('business-name');
+        this.discountText = document.getElementById('discount-text');
+        this.discountCode = document.getElementById('discount-code');
 
         // Game over elements
         this.gameOverTitle = document.getElementById('game-over-title');
@@ -69,6 +83,10 @@ class BruchsalQuest {
     bindEvents() {
         this.startBtn.addEventListener('click', () => this.startGame());
         this.skipGpsBtn.addEventListener('click', () => this.skipGPS());
+        this.continueBtn.addEventListener('click', () => this.continueToNextQuestion());
+        this.stayBtn.addEventListener('click', () => this.stayAtLocation());
+        this.claimDiscountBtn.addEventListener('click', () => this.claimDiscount());
+        this.continueGameBtn.addEventListener('click', () => this.continueFromDiscount());
         this.retryBtn.addEventListener('click', () => this.retryQuestion());
         this.restartBtn.addEventListener('click', () => this.restartGame());
         this.playAgainBtn.addEventListener('click', () => this.restartGame());
@@ -534,7 +552,7 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             lng: this.currentQuestion.longitude
         };
         
-        this.locationHint.textContent = `Walk to the location from the previous question: ${this.currentQuestion.question.split('?')[0]}?`;
+        this.locationHint.textContent = `Walk to the location: ${this.currentQuestion.correctAnswerText}`;
         this.showScreen('gps');
         this.resetDistanceBar();
         this.startLocationTracking();
@@ -547,8 +565,8 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                 (error) => this.handleLocationError(error),
                 {
                     enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 60000
+                    timeout: 15000,
+                    maximumAge: 30000
                 }
             );
         } else {
@@ -570,9 +588,18 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             this.targetLocation.lng
         );
 
-        this.updateDistanceBar(distance);
+        // Debug info for location accuracy
+        console.log(`Current location: ${this.userLocation.lat.toFixed(6)}, ${this.userLocation.lng.toFixed(6)}`);
+        console.log(`Target location: ${this.targetLocation.lat.toFixed(6)}, ${this.targetLocation.lng.toFixed(6)}`);
+        console.log(`Distance: ${distance.toFixed(1)}m, GPS accuracy: ${position.coords.accuracy?.toFixed(1) || 'unknown'}m`);
 
-        if (distance <= 50) { // Within 50 meters
+        this.updateDistanceBar(distance, position.coords.accuracy);
+
+        // Increased radius to 120m for better real-world GPS accuracy
+        // If GPS accuracy is poor (>20m), be more lenient with acceptance radius
+        const acceptanceRadius = (accuracy && accuracy > 20) ? Math.max(120, accuracy * 1.5) : 120;
+        
+        if (distance <= acceptanceRadius) {
             this.arriveAtLocation();
         }
     }
@@ -606,9 +633,10 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         this.gpsStatusText.textContent = '🚶 Start walking towards the target location';
     }
 
-    updateDistanceBar(distance) {
-        // Update distance text
-        this.distanceText.textContent = `📡 GPS Signal Active`;
+    updateDistanceBar(distance, accuracy) {
+        // Update distance text with GPS accuracy info
+        const accuracyText = accuracy ? ` (±${accuracy.toFixed(0)}m)` : '';
+        this.distanceText.textContent = `📡 GPS Signal Active${accuracyText}`;
         this.distanceMeters.textContent = `${distance.toFixed(0)} m`;
         
         // Calculate progress (closer = higher percentage)
@@ -619,17 +647,17 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         this.distanceBarFill.style.width = `${progress}%`;
         this.distanceBarText.textContent = `${progress.toFixed(0)}%`;
         
-        // Update status text based on distance
-        if (distance <= 50) {
+        // Update status text based on distance - adjusted for new 120m acceptance radius
+        if (distance <= 120) {
             this.gpsStatusText.textContent = '🎉 Perfect! You reached the target location!';
             this.distanceBarFill.style.background = 'linear-gradient(90deg, #27ae60, #2ecc71)';
-        } else if (distance <= 100) {
+        } else if (distance <= 200) {
             this.gpsStatusText.textContent = '🔥 Very close! Almost there!';
             this.distanceBarFill.style.background = 'linear-gradient(90deg, #f39c12, #27ae60)';
-        } else if (distance <= 300) {
+        } else if (distance <= 400) {
             this.gpsStatusText.textContent = '👍 Getting closer! Keep walking!';
             this.distanceBarFill.style.background = 'linear-gradient(90deg, #e67e22, #f39c12)';
-        } else if (distance <= 500) {
+        } else if (distance <= 600) {
             this.gpsStatusText.textContent = '🚶 You\'re on the right track!';
             this.distanceBarFill.style.background = 'linear-gradient(90deg, #e74c3c, #e67e22)';
         } else {
@@ -643,21 +671,31 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         this.playSound('arrival');
         this.score += 50; // Bonus for visiting location
         
-        // Show success message
-        this.gpsStatusText.textContent = '✅ Location reached! Loading next question...';
+        // Check if this is a commercial location
+        const isCommercial = this.currentQuestion.extraData === 'commercial';
         
-        setTimeout(() => {
-            this.currentQuestionIndex++;
-            this.showScreen('question');
-            this.displayQuestion();
-        }, 2000);
+        if (isCommercial) {
+            // Show discount screen for commercial locations
+            this.showDiscountScreen();
+        } else {
+            // Show regular verification screen
+            this.verifiedLocation.textContent = this.currentQuestion.correctAnswerText;
+            this.showScreen('verification');
+        }
     }
 
     skipGPS() {
         this.stopLocationTracking();
-        this.currentQuestionIndex++;
-        this.showScreen('question');
-        this.displayQuestion();
+        // Show a confirmation message that they can skip if GPS is problematic
+        const skipConfirm = confirm('Skip GPS challenge? You can continue without visiting the location.');
+        if (skipConfirm) {
+            this.currentQuestionIndex++;
+            this.showScreen('question');
+            this.displayQuestion();
+        } else {
+            // Return to GPS screen if they changed their mind
+            this.startGPSChallenge();
+        }
     }
 
     stopLocationTracking() {
@@ -665,6 +703,46 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             navigator.geolocation.clearWatch(this.watchId);
             this.watchId = null;
         }
+    }
+
+    continueToNextQuestion() {
+        this.currentQuestionIndex++;
+        this.showScreen('question');
+        this.displayQuestion();
+    }
+
+    stayAtLocation() {
+        // Return to GPS screen to stay at location
+        this.showScreen('gps');
+        this.startLocationTracking();
+    }
+
+    showDiscountScreen() {
+        // Set up discount information
+        this.businessName.textContent = this.currentQuestion.correctAnswerText;
+        
+        // Different discounts based on business type
+        if (this.currentQuestion.correctAnswerText.includes('Billiard-Sportpark')) {
+            this.discountText.textContent = '20% off your next game session!';
+            this.discountCode.textContent = 'BRUCHSAL20';
+        } else {
+            this.discountText.textContent = '15% off your purchase!';
+            this.discountCode.textContent = 'QUEST15';
+        }
+        
+        this.showScreen('discount');
+    }
+
+    claimDiscount() {
+        // Add bonus points for claiming discount
+        this.score += 100;
+        alert('Discount claimed! Show this screen to the business to redeem your offer.');
+    }
+
+    continueFromDiscount() {
+        this.currentQuestionIndex++;
+        this.showScreen('question');
+        this.displayQuestion();
     }
 
     retryQuestion() {
@@ -695,7 +773,7 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     }
 
     showScreen(screenName) {
-        const screens = [this.startScreen, this.questionScreen, this.gpsScreen, this.gameOverScreen, this.victoryScreen];
+        const screens = [this.startScreen, this.questionScreen, this.gpsScreen, this.verificationScreen, this.discountScreen, this.gameOverScreen, this.victoryScreen];
         screens.forEach(screen => screen.classList.remove('active'));
         
         switch (screenName) {
@@ -707,6 +785,12 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                 break;
             case 'gps':
                 this.gpsScreen.classList.add('active');
+                break;
+            case 'verification':
+                this.verificationScreen.classList.add('active');
+                break;
+            case 'discount':
+                this.discountScreen.classList.add('active');
                 break;
             case 'game-over':
                 this.gameOverScreen.classList.add('active');
