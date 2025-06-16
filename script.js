@@ -594,13 +594,21 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         console.log(`Distance: ${distance.toFixed(1)}m, GPS accuracy: ${position.coords.accuracy?.toFixed(1) || 'unknown'}m`);
         console.log(`Target name: ${this.currentQuestion.correctAnswerText}`);
         
+        // Test simple distance calculation for debugging
+        const latDiff = Math.abs(this.userLocation.lat - this.targetLocation.lat);
+        const lngDiff = Math.abs(this.userLocation.lng - this.targetLocation.lng);
+        const simpleDistance = Math.sqrt(latDiff * latDiff + lngDiff * lngDiff) * 111000; // rough approximation
+        console.log(`Simple distance calc: ${simpleDistance.toFixed(1)}m`);
+        console.log(`Lat diff: ${latDiff.toFixed(6)}, Lng diff: ${lngDiff.toFixed(6)}`);
+        
         // Also show debug info on screen
-        this.gpsStatusText.innerHTML = `🧭 Distance: ${distance.toFixed(0)}m<br>📍 Your GPS: ${this.userLocation.lat.toFixed(4)}, ${this.userLocation.lng.toFixed(4)}<br>🎯 Target: ${this.targetLocation.lat.toFixed(4)}, ${this.targetLocation.lng.toFixed(4)}<br>📶 Accuracy: ±${position.coords.accuracy?.toFixed(0) || '?'}m`;
+        this.gpsStatusText.innerHTML = `🧭 Distance: ${distance.toFixed(0)}m<br>📍 Your GPS: ${this.userLocation.lat.toFixed(6)}, ${this.userLocation.lng.toFixed(6)}<br>🎯 Target: ${this.targetLocation.lat.toFixed(6)}, ${this.targetLocation.lng.toFixed(6)}<br>📶 Accuracy: ±${position.coords.accuracy?.toFixed(0) || '?'}m<br>🔧 Simple calc: ${simpleDistance.toFixed(0)}m`;
 
         this.updateDistanceBar(distance, position.coords.accuracy);
 
         // Increased radius to 120m for better real-world GPS accuracy
         // If GPS accuracy is poor (>20m), be more lenient with acceptance radius
+        const accuracy = position.coords.accuracy;
         const acceptanceRadius = (accuracy && accuracy > 20) ? Math.max(120, accuracy * 1.5) : 120;
         
         if (distance <= acceptanceRadius) {
