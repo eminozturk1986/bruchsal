@@ -764,3 +764,39 @@ body {
 .puzzle-result.wrong {
     color: #ffb6c1;
 }
+
+/* Compass Styles */
+.compass-container {
+    margin: 20px 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.compass-circle {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border: 3px solid #daa520;
+    border-radius: 50%;
+    background: rgba(218, 165, 32, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 15px rgba(218, 165, 32, 0.5);
+}
+
+.compass-arrow {
+    font-size: 24px;
+    transition: transform 0.5s ease;
+    filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
+}
+
+.compass-label {
+    position: absolute;
+    bottom: -25px;
+    font-size: 8px;
+    color: #daa520;
+    text-align: center;
+    width: 100%;
+}

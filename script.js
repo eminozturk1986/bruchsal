@@ -58,6 +58,7 @@ class BruchsalQuest {
         this.distanceBarText = document.getElementById('distance-bar-text');
         this.distanceMeters = document.getElementById('distance-meters');
         this.gpsStatusText = document.getElementById('gps-status-text');
+        this.compassArrow = document.getElementById('compass-arrow');
         
         // Verification elements
         this.verifiedLocation = document.getElementById('verified-location');
@@ -605,6 +606,7 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         this.distanceMeters.innerHTML = `${distance.toFixed(0)}m<br><small>Debug: ${this.userLocation.lat.toFixed(4)},${this.userLocation.lng.toFixed(4)} → ${this.targetLocation.lat.toFixed(4)},${this.targetLocation.lng.toFixed(4)}</small>`;
 
         this.updateDistanceBar(distance, position.coords.accuracy);
+        this.updateCompass();
 
         // Reduced radius to 15m for better verification accuracy
         // If GPS accuracy is poor (>20m), be more lenient with acceptance radius
@@ -643,6 +645,9 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         this.distanceBarText.textContent = '0%';
         this.distanceMeters.textContent = '--- m';
         this.gpsStatusText.textContent = '🚶 Start walking towards the target location';
+        
+        // Reset compass
+        this.compassArrow.style.transform = 'rotate(0deg)';
     }
 
     updateDistanceBar(distance, accuracy) {
@@ -1089,6 +1094,27 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                   Math.sin(lat1Rad) * Math.cos(lat2Rad) * Math.cos(dLng);
         
         return Math.atan2(y, x);
+    }
+
+    updateCompass() {
+        if (!this.userLocation || !this.targetLocation) return;
+        
+        // Calculate bearing from user to target
+        const bearing = this.calculateBearing(
+            this.userLocation.lat,
+            this.userLocation.lng,
+            this.targetLocation.lat,
+            this.targetLocation.lng
+        );
+        
+        // Convert bearing from radians to degrees
+        const bearingDegrees = (bearing * 180 / Math.PI + 360) % 360;
+        
+        // Rotate compass arrow to point towards target
+        this.compassArrow.style.transform = `rotate(${bearingDegrees}deg)`;
+        
+        // Log for debugging
+        console.log(`Compass bearing: ${bearingDegrees.toFixed(1)}°`);
     }
 
 
