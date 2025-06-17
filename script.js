@@ -11,6 +11,8 @@ class BruchsalQuest {
         this.watchId = null;
         this.musicPlaying = false;
         this.soundEnabled = false;
+        this.deviceHeading = 0;
+        this.orientationHandler = null;
         
         this.initializeElements();
         this.bindEvents();
@@ -574,6 +576,41 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             this.distanceText.textContent = '📍 Geolocation not supported';
             this.gpsStatusText.textContent = '❌ GPS not available. Click SKIP to continue.';
         }
+        
+        // Start device orientation tracking
+        this.startOrientationTracking();
+    }
+
+    startOrientationTracking() {
+        // Check if device orientation is supported
+        if ('DeviceOrientationEvent' in window) {
+            // Create bound handler function
+            this.orientationHandler = (event) => this.handleOrientation(event);
+            
+            // Request permission for iOS 13+
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(response => {
+                        if (response === 'granted') {
+                            window.addEventListener('deviceorientation', this.orientationHandler);
+                        }
+                    })
+                    .catch(console.error);
+            } else {
+                // For Android and older iOS
+                window.addEventListener('deviceorientation', this.orientationHandler);
+            }
+        }
+    }
+
+    handleOrientation(event) {
+        // Get device heading (compass direction)
+        this.deviceHeading = event.alpha || 0;
+        
+        // Update compass if we have location data
+        if (this.userLocation && this.targetLocation) {
+            this.updateCompass();
+        }
     }
 
     updateLocation(position) {
@@ -719,6 +756,12 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         if (this.watchId) {
             navigator.geolocation.clearWatch(this.watchId);
             this.watchId = null;
+        }
+        
+        // Stop orientation tracking
+        if (this.orientationHandler) {
+            window.removeEventListener('deviceorientation', this.orientationHandler);
+            this.orientationHandler = null;
         }
     }
 
@@ -1110,11 +1153,15 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         // Convert bearing from radians to degrees
         const bearingDegrees = (bearing * 180 / Math.PI + 360) % 360;
         
-        // Rotate compass arrow to point towards target
-        this.compassArrow.style.transform = `rotate(${bearingDegrees}deg)`;
+        // Adjust for device orientation (which way phone is pointing)
+        // Subtract device heading so arrow points correctly relative to phone orientation
+        const adjustedBearing = (bearingDegrees - this.deviceHeading + 360) % 360;
+        
+        // Rotate compass arrow to point towards target relative to phone orientation
+        this.compassArrow.style.transform = `rotate(${adjustedBearing}deg)`;
         
         // Log for debugging
-        console.log(`Compass bearing: ${bearingDegrees.toFixed(1)}°`);
+        console.log(`Target bearing: ${bearingDegrees.toFixed(1)}°, Device heading: ${this.deviceHeading.toFixed(1)}°, Adjusted: ${adjustedBearing.toFixed(1)}°`);
     }
 
 
