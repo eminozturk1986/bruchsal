@@ -1,11 +1,12 @@
 Question,Choice A,Choice B,Choice C,Choice D,Correct Answer,Latitude,Longitude,Question Type,Extra Data
-Which Baroque palace in Bruchsal features an ornate Rococo staircase and now houses two museums?,Schlossgarten Bruchsal,Bruchsal Palace,Michaelskapelle,Belvedere,Bruchsal Palace,49.108,8.593,multiple_choice,
-What hilltop chapel offers a panoramic view over Bruchsal?,Belvedere,Peterskirche,Stadtgarten,Andreas-Staffel,Belvedere,49.111,8.595,multiple_choice,
-Which church in Bruchsal survived WWII and was designed by Balthasar Neumann?,Hofkirche Bruchsal,St. Paulusheim,Peterskirche (St. Peter),Stadtkirche 'Unsere Liebe Frau',Peterskirche (St. Peter),49.1086,8.596,multiple_choice,
-What is the name of the historic fountain in Stadtgarten honoring Ferdinand Keller?,Amalienbrunnen,Narrenschiff,Ferdinand‑Keller‑Brunnen,Amalienbrunnen,Ferdinand‑Keller‑Brunnen,49.109,8.594,multiple_choice,
-What medieval tower is the only remnant of the Old Castle in Bruchsal?,Bergfried,Große Brücke,Technisches Rathaus,Andreas-Staffel,Bergfried,49.11,8.595,multiple_choice,
-Match the landmark to its description: Famous baroque staircase,🏰 Palace,🎵 Music Museum,⛪ Church,🗼 Tower,🏰 Palace,49.108,8.593,picture_match,🏰=Bruchsal Palace|🎵=Music Museum|⛪=Church|🗼=Tower
-Unscramble the letters to find this hilltop location: DEVRELBEE,,,,,Belvedere,49.111,8.595,word_puzzle,DEVRELBEE
-Draw lines to connect these pieces and reveal the landmark,Piece 1,Piece 2,Piece 3,Piece 4,Bruchsal Palace,49.108,8.593,connect_puzzle,palace_outline
+Which Baroque palace in Bruchsal features an ornate Rococo staircase and now houses two museums?,Schlossgarten Bruchsal,Bruchsal Palace,Michaelskapelle,Belvedere,Bruchsal Palace,49.1289027,8.5981354,multiple_choice,
+What hilltop chapel offers a panoramic view over Bruchsal?,Belvedere,Peterskirche,Stadtgarten,Andreas-Staffel,Belvedere,49.1266200,8.6014276,multiple_choice,
+Which church in Bruchsal survived WWII and was designed by Balthasar Neumann?,Hofkirche Bruchsal,St. Paulusheim,Peterskirche (St. Peter),Stadtkirche 'Unsere Liebe Frau',Peterskirche (St. Peter),49.1207832,8.6033892,multiple_choice,
+What is the name of the historic fountain in Stadtgarten honoring Ferdinand Keller?,Amalienbrunnen,Narrenschiff,Ferdinand‑Keller‑Brunnen,Amalienbrunnen,Ferdinand‑Keller‑Brunnen,49.1267833,8.6028479,multiple_choice,
+What medieval tower is the only remnant of the Old Castle in Bruchsal?,Bergfried,Große Brücke,Technisches Rathaus,Andreas-Staffel,Bergfried,49.1247609,8.5994674,multiple_choice,
+Unscramble the letters to find this hilltop location: DEVRELBEE,,,,,Belvedere,49.1266200,8.6014276,word_puzzle,DEVRELBEE
+Draw lines to connect these pieces and reveal the landmark,Piece 1,Piece 2,Piece 3,Piece 4,Bruchsal Palace,49.1289027,8.5981354,connect_puzzle,palace_outline
+In which building can you find tracks connecting Bruchsal to Karlsruhe Heidelberg and beyond?,Bruchsal Hauptbahnhof,Bus Station,Airport,Metro Hub,Bruchsal Hauptbahnhof,49.1251034,8.5908803,multiple_choice,
+Bruchsal is known for this white delicacy honored with a fountain on Kübelmarkt. What vegetable is it?,Asparagus,Cabbage,Cauliflower,Turnip,Asparagus,49.1228420,8.5994987,multiple_choice,
 Which Catholic church built in 1955 serves the southwest district of Bruchsal with space for 360 worshippers?,St. Peter,St. Anton,St. Maria,St. Josef,St. Anton,49.119567,8.571305,multiple_choice,
-Where can you enjoy billiards snooker and darts in a relaxed atmosphere with friends since 1997?,Café Central,Billiard-Sportpark,Sports Club,Game Center,Billiard-Sportpark,49.1185,8.5875,multiple_choice,commercial
+Where can you enjoy billiards snooker and darts in a relaxed atmosphere with friends since 1997?,Café Central,Billiard-Sportpark,Sports Club,Game Center,Billiard-Sportpark,49.139962,8.559737,multiple_choice,commercial

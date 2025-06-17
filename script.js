@@ -601,15 +601,15 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         console.log(`Simple distance calc: ${simpleDistance.toFixed(1)}m`);
         console.log(`Lat diff: ${latDiff.toFixed(6)}, Lng diff: ${lngDiff.toFixed(6)}`);
         
-        // Also show debug info on screen
-        this.gpsStatusText.innerHTML = `🧭 Distance: ${distance.toFixed(0)}m<br>📍 Your GPS: ${this.userLocation.lat.toFixed(6)}, ${this.userLocation.lng.toFixed(6)}<br>🎯 Target: ${this.targetLocation.lat.toFixed(6)}, ${this.targetLocation.lng.toFixed(6)}<br>📶 Accuracy: ±${position.coords.accuracy?.toFixed(0) || '?'}m<br>🔧 Simple calc: ${simpleDistance.toFixed(0)}m`;
+        // Show debug info in distance meters display instead
+        this.distanceMeters.innerHTML = `${distance.toFixed(0)}m<br><small>Debug: ${this.userLocation.lat.toFixed(4)},${this.userLocation.lng.toFixed(4)} → ${this.targetLocation.lat.toFixed(4)},${this.targetLocation.lng.toFixed(4)}</small>`;
 
         this.updateDistanceBar(distance, position.coords.accuracy);
 
-        // Increased radius to 120m for better real-world GPS accuracy
+        // Reduced radius to 15m for better verification accuracy
         // If GPS accuracy is poor (>20m), be more lenient with acceptance radius
         const accuracy = position.coords.accuracy;
-        const acceptanceRadius = (accuracy && accuracy > 20) ? Math.max(120, accuracy * 1.5) : 120;
+        const acceptanceRadius = (accuracy && accuracy > 20) ? Math.max(15, accuracy * 1.2) : 15;
         
         if (distance <= acceptanceRadius) {
             this.arriveAtLocation();
@@ -659,17 +659,17 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         this.distanceBarFill.style.width = `${progress}%`;
         this.distanceBarText.textContent = `${progress.toFixed(0)}%`;
         
-        // Update status text based on distance - adjusted for new 120m acceptance radius
-        if (distance <= 120) {
+        // Update status text based on distance - adjusted for new 15m acceptance radius
+        if (distance <= 15) {
             this.gpsStatusText.textContent = '🎉 Perfect! You reached the target location!';
             this.distanceBarFill.style.background = 'linear-gradient(90deg, #27ae60, #2ecc71)';
-        } else if (distance <= 200) {
+        } else if (distance <= 50) {
             this.gpsStatusText.textContent = '🔥 Very close! Almost there!';
             this.distanceBarFill.style.background = 'linear-gradient(90deg, #f39c12, #27ae60)';
-        } else if (distance <= 400) {
+        } else if (distance <= 150) {
             this.gpsStatusText.textContent = '👍 Getting closer! Keep walking!';
             this.distanceBarFill.style.background = 'linear-gradient(90deg, #e67e22, #f39c12)';
-        } else if (distance <= 600) {
+        } else if (distance <= 300) {
             this.gpsStatusText.textContent = '🚶 You\'re on the right track!';
             this.distanceBarFill.style.background = 'linear-gradient(90deg, #e74c3c, #e67e22)';
         } else {
