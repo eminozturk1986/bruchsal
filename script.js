@@ -36,6 +36,7 @@ class BruchsalQuest {
         this.gameOverScreen = document.getElementById('game-over-screen');
         this.victoryScreen = document.getElementById('victory-screen');
         this.leaderboardScreen = document.getElementById('leaderboard-screen');
+        this.questJournalScreen = document.getElementById('quest-journal-screen');
 
         // Buttons
         this.startBtn = document.getElementById('start-btn');
@@ -59,6 +60,8 @@ class BruchsalQuest {
         this.leaderboardBtn = document.getElementById('leaderboard-btn');
         this.backToMenuBtn = document.getElementById('back-to-menu-btn');
         this.viewLeaderboardBtn = document.getElementById('view-leaderboard-btn');
+        this.questJournalBtn = document.getElementById('quest-journal-btn');
+        this.journalBackBtn = document.getElementById('journal-back-btn');
 
         // Game elements
         this.scoreElement = document.getElementById('score');
@@ -118,6 +121,11 @@ class BruchsalQuest {
         this.userRank = document.getElementById('user-rank');
         this.totalPlayers = document.getElementById('total-players');
         this.newRecord = document.getElementById('new-record');
+        
+        // Quest Journal elements
+        this.locationGrid = document.getElementById('location-grid');
+        this.taggedCount = document.getElementById('tagged-count');
+        this.remainingCount = document.getElementById('remaining-count');
     }
 
     bindEvents() {
@@ -149,6 +157,8 @@ class BruchsalQuest {
         this.leaderboardBtn.addEventListener('click', () => this.showLeaderboard());
         this.backToMenuBtn.addEventListener('click', () => this.showMainMenu());
         this.viewLeaderboardBtn.addEventListener('click', () => this.showLeaderboard());
+        this.questJournalBtn.addEventListener('click', () => this.showQuestJournal());
+        this.journalBackBtn.addEventListener('click', () => this.showMainMenu());
         
         // Enter key handling for login forms
         this.loginPassword.addEventListener('keypress', (e) => {
@@ -900,7 +910,7 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     }
 
     showScreen(screenName) {
-        const screens = [this.loginScreen, this.startScreen, this.questionScreen, this.gpsScreen, this.verificationScreen, this.discountScreen, this.gameOverScreen, this.victoryScreen, this.leaderboardScreen];
+        const screens = [this.loginScreen, this.startScreen, this.questionScreen, this.gpsScreen, this.verificationScreen, this.discountScreen, this.gameOverScreen, this.victoryScreen, this.leaderboardScreen, this.questJournalScreen];
         screens.forEach(screen => screen.classList.remove('active'));
         
         switch (screenName) {
@@ -930,6 +940,9 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                 break;
             case 'leaderboard':
                 this.leaderboardScreen.classList.add('active');
+                break;
+            case 'quest-journal':
+                this.questJournalScreen.classList.add('active');
                 break;
         }
     }
@@ -1517,6 +1530,103 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             this.userRank.textContent = userRank > 0 ? userRank : '-';
         } else {
             this.userRank.textContent = '-';
+        }
+    }
+    
+    // ===== QUEST JOURNAL SYSTEM =====
+    
+    showQuestJournal() {
+        this.showScreen('quest-journal');
+        this.updateQuestJournal();
+    }
+    
+    updateQuestJournal() {
+        // Get completed locations from localStorage
+        const completedLocations = this.getCompletedLocations();
+        const totalLocations = this.questions.length;
+        const taggedLocations = completedLocations.length;
+        const remainingLocations = totalLocations - taggedLocations;
+        
+        // Update stats
+        this.taggedCount.textContent = taggedLocations;
+        this.remainingCount.textContent = remainingLocations;
+        
+        // Clear existing entries
+        this.locationGrid.innerHTML = '';
+        
+        if (this.questions.length === 0) {
+            this.locationGrid.innerHTML = '<div class="empty-leaderboard">No locations available</div>';
+            return;
+        }
+        
+        // Create location entries
+        this.questions.forEach((question, index) => {
+            const entry = document.createElement('div');
+            entry.className = 'location-entry';
+            
+            const isCompleted = completedLocations.includes(question.correctAnswerText);
+            if (isCompleted) {
+                entry.classList.add('tagged');
+            }
+            
+            const locationName = document.createElement('div');
+            locationName.className = 'location-name';
+            locationName.textContent = question.correctAnswerText || `Location ${index + 1}`;
+            
+            const locationStatus = document.createElement('div');
+            locationStatus.className = 'location-status';
+            locationStatus.textContent = isCompleted ? 'HIJACKED ✓' : 'TARGET LOCKED';
+            
+            entry.appendChild(locationName);
+            entry.appendChild(locationStatus);
+            
+            this.locationGrid.appendChild(entry);
+        });
+    }
+    
+    getCompletedLocations() {
+        try {
+            const completed = localStorage.getItem('pathJack_completed_locations');
+            return completed ? JSON.parse(completed) : [];
+        } catch (e) {
+            console.error('Error parsing completed locations:', e);
+            return [];
+        }
+    }
+    
+    saveCompletedLocation(locationName) {
+        try {
+            const completed = this.getCompletedLocations();
+            if (!completed.includes(locationName)) {
+                completed.push(locationName);
+                localStorage.setItem('pathJack_completed_locations', JSON.stringify(completed));
+            }
+        } catch (e) {
+            console.error('Error saving completed location:', e);
+        }
+    }
+    
+    // Update the arrive at location method to save completed locations
+    arriveAtLocation() {
+        this.stopLocationTracking();
+        this.playSound('arrival');
+        this.score += 50; // Bonus for visiting location
+        
+        // Save this location as completed
+        if (this.currentQuestion && this.currentQuestion.correctAnswerText) {
+            this.saveCompletedLocation(this.currentQuestion.correctAnswerText);
+        }
+        
+        // Check if this is a commercial location
+        const isCommercial = this.currentQuestion.extraData === 'commercial';
+        
+        if (isCommercial) {
+            // Show discount screen for commercial locations
+            this.showDiscountScreen();
+        } else {
+            // Show regular verification screen
+            this.verifiedLocation.textContent = this.currentQuestion.correctAnswerText;
+            this.showScreen('verification');
         }
     }
 }
