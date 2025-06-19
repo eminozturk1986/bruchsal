@@ -816,26 +816,85 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         const maxDistance = 1000; // Maximum distance for 0% progress
         const progress = Math.max(0, Math.min(100, (maxDistance - distance) / maxDistance * 100));
         
-        // Update progress bar
-        this.distanceBarFill.style.width = `${progress}%`;
+        // Update progress elements
         this.distanceBarText.textContent = `${progress.toFixed(0)}%`;
         
-        // Update status text based on distance - adjusted for new 15m acceptance radius
+        // Update map-based progress visualization
+        this.updateMapProgress(progress, distance);
+        
+        // Update status text based on distance
         if (distance <= 15) {
-            this.gpsStatusText.textContent = '🎉 Perfect! You reached the target location!';
-            this.distanceBarFill.style.background = 'linear-gradient(90deg, #27ae60, #2ecc71)';
+            this.gpsStatusText.textContent = '🎉 TARGET ACQUIRED! INFILTRATION COMPLETE!';
         } else if (distance <= 50) {
-            this.gpsStatusText.textContent = '🔥 Very close! Almost there!';
-            this.distanceBarFill.style.background = 'linear-gradient(90deg, #f39c12, #27ae60)';
+            this.gpsStatusText.textContent = '🔥 PROXIMITY ALERT! Almost at target!';
         } else if (distance <= 150) {
-            this.gpsStatusText.textContent = '👍 Getting closer! Keep walking!';
-            this.distanceBarFill.style.background = 'linear-gradient(90deg, #e67e22, #f39c12)';
+            this.gpsStatusText.textContent = '👍 APPROACHING TARGET! Keep moving!';
         } else if (distance <= 300) {
-            this.gpsStatusText.textContent = '🚶 You\'re on the right track!';
-            this.distanceBarFill.style.background = 'linear-gradient(90deg, #e74c3c, #e67e22)';
+            this.gpsStatusText.textContent = '🚶 ON ROUTE! Target detected!';
         } else {
-            this.gpsStatusText.textContent = '🧭 Start walking towards the target location';
-            this.distanceBarFill.style.background = 'linear-gradient(90deg, #c0392b, #e74c3c)';
+            this.gpsStatusText.textContent = '🧭 SCANNING... Move towards target location';
+        }
+    }
+    
+    updateMapProgress(progress, distance) {
+        // Update progress path width (from player to target)
+        const progressPath = document.getElementById('progress-path');
+        const mapOverlay = document.getElementById('map-overlay');
+        
+        if (progressPath) {
+            // Path grows from 0% to 70% of map width as user gets closer
+            const pathWidth = Math.min(70, progress * 0.7);
+            progressPath.style.width = `${pathWidth}%`;
+        }
+        
+        if (mapOverlay) {
+            // Gradually reveal map as user gets closer
+            const overlayOpacity = Math.max(0.1, (100 - progress) / 100);
+            
+            if (progress < 20) {
+                // Far away - mostly dark
+                mapOverlay.style.background = `linear-gradient(
+                    90deg,
+                    rgba(0, 0, 0, 0.9) 0%,
+                    rgba(0, 0, 0, 0.8) 30%,
+                    rgba(0, 0, 0, 0.7) 60%,
+                    rgba(0, 0, 0, 0.6) 100%
+                )`;
+            } else if (progress < 50) {
+                // Getting closer - some visibility
+                mapOverlay.style.background = `linear-gradient(
+                    90deg,
+                    rgba(0, 0, 0, 0.7) 0%,
+                    rgba(0, 0, 0, 0.5) 30%,
+                    rgba(0, 0, 0, 0.3) 60%,
+                    rgba(0, 0, 0, 0.2) 100%
+                )`;
+            } else if (progress < 80) {
+                // Close - good visibility
+                mapOverlay.style.background = `linear-gradient(
+                    90deg,
+                    rgba(0, 0, 0, 0.4) 0%,
+                    rgba(0, 0, 0, 0.2) 30%,
+                    rgba(0, 0, 0, 0.1) 60%,
+                    transparent 100%
+                )`;
+            } else {
+                // Very close - almost full visibility
+                mapOverlay.style.background = `linear-gradient(
+                    90deg,
+                    rgba(0, 0, 0, 0.2) 0%,
+                    rgba(0, 0, 0, 0.1) 20%,
+                    transparent 40%,
+                    transparent 100%
+                )`;
+            }
+        }
+        
+        // Update player marker position based on progress
+        const playerMarker = document.getElementById('player-marker');
+        if (playerMarker) {
+            const playerPosition = 10 + (progress * 0.6); // Move from 10% to 70% across map
+            playerMarker.style.left = `${Math.min(70, playerPosition)}%`;
         }
     }
 
