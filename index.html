@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bruchsal Quest - 8-bit Trivia Adventure</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=2.0">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     
     <!-- PWA Manifest -->
@@ -23,14 +23,49 @@
         <!-- Sound Toggle Button -->
         <button id="sound-toggle" class="sound-toggle muted">🔇</button>
         
-        <!-- Start Screen -->
-        <div id="start-screen" class="screen active">
+        <!-- Login Screen -->
+        <div id="login-screen" class="screen active">
             <div class="pixel-title">
                 <h1>BRUCHSAL QUEST</h1>
                 <p class="subtitle">8-bit Trivia Adventure</p>
             </div>
+            <div class="pixel-character">👤</div>
+            <div class="login-container">
+                <div class="login-form">
+                    <h3>LOGIN</h3>
+                    <input type="text" id="login-username" placeholder="Username" class="pixel-input">
+                    <input type="password" id="login-password" placeholder="Password" class="pixel-input">
+                    <button id="login-btn" class="pixel-btn">LOGIN</button>
+                    <button id="show-register-btn" class="pixel-btn secondary">REGISTER</button>
+                </div>
+                <div class="register-form" style="display: none;">
+                    <h3>REGISTER</h3>
+                    <input type="text" id="register-username" placeholder="Username" class="pixel-input">
+                    <input type="password" id="register-password" placeholder="Password" class="pixel-input">
+                    <input type="password" id="register-confirm" placeholder="Confirm Password" class="pixel-input">
+                    <button id="register-btn" class="pixel-btn">REGISTER</button>
+                    <button id="show-login-btn" class="pixel-btn secondary">BACK TO LOGIN</button>
+                </div>
+            </div>
+            <div class="guest-option">
+                <button id="guest-btn" class="pixel-btn secondary">PLAY AS GUEST</button>
+            </div>
+        </div>
+
+        <!-- Start Screen -->
+        <div id="start-screen" class="screen">
+            <div class="pixel-title">
+                <h1>BRUCHSAL QUEST</h1>
+                <p class="subtitle">8-bit Trivia Adventure</p>
+            </div>
+            <div class="user-info">
+                <p>Welcome, <span id="current-user">Guest</span>!</p>
+                <p>Best Score: <span id="user-best-score">0</span> XP</p>
+            </div>
             <div class="pixel-character">🏛️</div>
             <button id="start-btn" class="pixel-btn">START GAME</button>
+            <button id="leaderboard-btn" class="pixel-btn secondary">LEADERBOARD</button>
+            <button id="logout-btn" class="pixel-btn secondary">LOGOUT</button>
             <div class="instructions">
                 <p>Answer trivia questions about Bruchsal landmarks</p>
                 <p>Visit the real locations to unlock new questions!</p>
@@ -152,6 +187,22 @@
             </div>
         </div>
 
+        <!-- Leaderboard Screen -->
+        <div id="leaderboard-screen" class="screen">
+            <div class="leaderboard-content">
+                <h2>LEADERBOARD</h2>
+                <div class="pixel-character">🏆</div>
+                <div class="leaderboard-list" id="leaderboard-list">
+                    <!-- Leaderboard entries will be populated here -->
+                </div>
+                <div class="leaderboard-stats">
+                    <p>Your Rank: <span id="user-rank">-</span></p>
+                    <p>Total Players: <span id="total-players">0</span></p>
+                </div>
+                <button id="back-to-menu-btn" class="pixel-btn">BACK TO MENU</button>
+            </div>
+        </div>
+
         <!-- Victory Screen -->
         <div id="victory-screen" class="screen">
             <div class="victory-content">
@@ -159,7 +210,11 @@
                 <div class="pixel-character celebrate">🏆</div>
                 <p>You've completed all Bruchsal locations!</p>
                 <div class="final-score">Final XP: <span id="final-score">0</span></div>
+                <div class="new-record" id="new-record" style="display: none;">
+                    <p class="record-text">🎉 NEW PERSONAL BEST! 🎉</p>
+                </div>
                 <button id="play-again-btn" class="pixel-btn">PLAY AGAIN</button>
+                <button id="view-leaderboard-btn" class="pixel-btn secondary">VIEW LEADERBOARD</button>
             </div>
         </div>
     </div>
@@ -178,7 +233,7 @@
         <source src="sounds/background.wav" type="audio/wav">
     </audio>
 
-    <script src="script.js"></script>
+    <script src="script.js?v=2.0"></script>
     <!-- Google Maps API - Replace YOUR_API_KEY_HERE with your actual Google Maps API key -->
     <!-- Get your API key at: https://console.cloud.google.com/google/maps-apis -->
     <!-- <script async defer src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY_HERE&callback=initMap&loading=async&libraries=marker"></script> -->

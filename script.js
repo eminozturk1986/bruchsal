@@ -4,7 +4,7 @@ class BruchsalQuest {
         this.questions = [];
         this.currentQuestionIndex = 0;
         this.score = 0;
-        this.gameState = 'start';
+        this.gameState = 'login';
         this.currentQuestion = null;
         this.userLocation = null;
         this.targetLocation = null;
@@ -14,14 +14,20 @@ class BruchsalQuest {
         this.deviceHeading = 0;
         this.orientationHandler = null;
         
+        // User authentication system
+        this.currentUser = null;
+        this.isGuest = false;
+        
         this.initializeElements();
         this.bindEvents();
         this.loadQuestions();
         this.createSoundEffects();
+        this.checkAutoLogin();
     }
 
     initializeElements() {
         // Screens
+        this.loginScreen = document.getElementById('login-screen');
         this.startScreen = document.getElementById('start-screen');
         this.questionScreen = document.getElementById('question-screen');
         this.gpsScreen = document.getElementById('gps-screen');
@@ -29,6 +35,7 @@ class BruchsalQuest {
         this.discountScreen = document.getElementById('discount-screen');
         this.gameOverScreen = document.getElementById('game-over-screen');
         this.victoryScreen = document.getElementById('victory-screen');
+        this.leaderboardScreen = document.getElementById('leaderboard-screen');
 
         // Buttons
         this.startBtn = document.getElementById('start-btn');
@@ -41,6 +48,17 @@ class BruchsalQuest {
         this.restartBtn = document.getElementById('restart-btn');
         this.playAgainBtn = document.getElementById('play-again-btn');
         this.soundToggle = document.getElementById('sound-toggle');
+        
+        // Authentication buttons
+        this.loginBtn = document.getElementById('login-btn');
+        this.registerBtn = document.getElementById('register-btn');
+        this.showRegisterBtn = document.getElementById('show-register-btn');
+        this.showLoginBtn = document.getElementById('show-login-btn');
+        this.guestBtn = document.getElementById('guest-btn');
+        this.logoutBtn = document.getElementById('logout-btn');
+        this.leaderboardBtn = document.getElementById('leaderboard-btn');
+        this.backToMenuBtn = document.getElementById('back-to-menu-btn');
+        this.viewLeaderboardBtn = document.getElementById('view-leaderboard-btn');
 
         // Game elements
         this.scoreElement = document.getElementById('score');
@@ -81,6 +99,25 @@ class BruchsalQuest {
         this.wrongSound = document.getElementById('wrong-sound');
         this.arrivalSound = document.getElementById('arrival-sound');
         this.backgroundMusic = document.getElementById('background-music');
+        
+        // Authentication elements
+        this.loginForm = document.querySelector('.login-form');
+        this.registerForm = document.querySelector('.register-form');
+        this.loginUsername = document.getElementById('login-username');
+        this.loginPassword = document.getElementById('login-password');
+        this.registerUsername = document.getElementById('register-username');
+        this.registerPassword = document.getElementById('register-password');
+        this.registerConfirm = document.getElementById('register-confirm');
+        
+        // User info elements
+        this.currentUserElement = document.getElementById('current-user');
+        this.userBestScore = document.getElementById('user-best-score');
+        
+        // Leaderboard elements
+        this.leaderboardList = document.getElementById('leaderboard-list');
+        this.userRank = document.getElementById('user-rank');
+        this.totalPlayers = document.getElementById('total-players');
+        this.newRecord = document.getElementById('new-record');
     }
 
     bindEvents() {
@@ -99,6 +136,27 @@ class BruchsalQuest {
         });
 
         this.soundToggle.addEventListener('click', () => this.toggleSound());
+        
+        // Authentication events
+        this.loginBtn.addEventListener('click', () => this.handleLogin());
+        this.registerBtn.addEventListener('click', () => this.handleRegister());
+        this.showRegisterBtn.addEventListener('click', () => this.showRegisterForm());
+        this.showLoginBtn.addEventListener('click', () => this.showLoginForm());
+        this.guestBtn.addEventListener('click', () => this.loginAsGuest());
+        this.logoutBtn.addEventListener('click', () => this.logout());
+        
+        // Navigation events
+        this.leaderboardBtn.addEventListener('click', () => this.showLeaderboard());
+        this.backToMenuBtn.addEventListener('click', () => this.showMainMenu());
+        this.viewLeaderboardBtn.addEventListener('click', () => this.showLeaderboard());
+        
+        // Enter key handling for login forms
+        this.loginPassword.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.handleLogin();
+        });
+        this.registerConfirm.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') this.handleRegister();
+        });
     }
 
     async loadQuestions() {
@@ -815,8 +873,17 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
         this.stopBackgroundMusic();
         
         if (victory) {
+            // Check for new personal best
+            const isNewRecord = this.updateUserScore(this.score);
+            
             this.showScreen('victory');
             this.finalScore.textContent = this.score;
+            
+            if (isNewRecord) {
+                this.newRecord.style.display = 'block';
+            } else {
+                this.newRecord.style.display = 'none';
+            }
         } else {
             this.showScreen('game-over');
             this.gameOverTitle.textContent = 'GAME OVER';
@@ -833,10 +900,13 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     }
 
     showScreen(screenName) {
-        const screens = [this.startScreen, this.questionScreen, this.gpsScreen, this.verificationScreen, this.discountScreen, this.gameOverScreen, this.victoryScreen];
+        const screens = [this.loginScreen, this.startScreen, this.questionScreen, this.gpsScreen, this.verificationScreen, this.discountScreen, this.gameOverScreen, this.victoryScreen, this.leaderboardScreen];
         screens.forEach(screen => screen.classList.remove('active'));
         
         switch (screenName) {
+            case 'login':
+                this.loginScreen.classList.add('active');
+                break;
             case 'start':
                 this.startScreen.classList.add('active');
                 break;
@@ -857,6 +927,9 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
                 break;
             case 'victory':
                 this.victoryScreen.classList.add('active');
+                break;
+            case 'leaderboard':
+                this.leaderboardScreen.classList.add('active');
                 break;
         }
     }
@@ -1185,6 +1258,267 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
 
 
 
+    // ===== AUTHENTICATION SYSTEM =====
+    
+    checkAutoLogin() {
+        const savedUser = localStorage.getItem('bruchsal_current_user');
+        if (savedUser) {
+            try {
+                this.currentUser = JSON.parse(savedUser);
+                this.isGuest = false;
+                this.showMainMenu();
+                this.updateUserDisplay();
+            } catch (e) {
+                console.error('Error parsing saved user:', e);
+                this.showScreen('login');
+            }
+        } else {
+            this.showScreen('login');
+        }
+    }
+    
+    showLoginForm() {
+        this.loginForm.style.display = 'block';
+        this.registerForm.style.display = 'none';
+        this.clearFormInputs();
+    }
+    
+    showRegisterForm() {
+        this.loginForm.style.display = 'none';
+        this.registerForm.style.display = 'block';
+        this.clearFormInputs();
+    }
+    
+    clearFormInputs() {
+        this.loginUsername.value = '';
+        this.loginPassword.value = '';
+        this.registerUsername.value = '';
+        this.registerPassword.value = '';
+        this.registerConfirm.value = '';
+    }
+    
+    handleLogin() {
+        const username = this.loginUsername.value.trim();
+        const password = this.loginPassword.value;
+        
+        if (!username || !password) {
+            alert('Please enter both username and password');
+            return;
+        }
+        
+        const users = this.getUsers();
+        const user = users.find(u => u.username === username && u.password === password);
+        
+        if (user) {
+            this.currentUser = user;
+            this.isGuest = false;
+            localStorage.setItem('bruchsal_current_user', JSON.stringify(user));
+            this.showMainMenu();
+            this.updateUserDisplay();
+        } else {
+            alert('Invalid username or password');
+        }
+    }
+    
+    handleRegister() {
+        const username = this.registerUsername.value.trim();
+        const password = this.registerPassword.value;
+        const confirmPassword = this.registerConfirm.value;
+        
+        if (!username || !password || !confirmPassword) {
+            alert('Please fill in all fields');
+            return;
+        }
+        
+        if (username.length < 3) {
+            alert('Username must be at least 3 characters long');
+            return;
+        }
+        
+        if (password.length < 4) {
+            alert('Password must be at least 4 characters long');
+            return;
+        }
+        
+        if (password !== confirmPassword) {
+            alert('Passwords do not match');
+            return;
+        }
+        
+        const users = this.getUsers();
+        if (users.find(u => u.username === username)) {
+            alert('Username already exists');
+            return;
+        }
+        
+        const newUser = {
+            username: username,
+            password: password,
+            bestScore: 0,
+            totalGames: 0,
+            registeredAt: new Date().toISOString()
+        };
+        
+        users.push(newUser);
+        this.saveUsers(users);
+        
+        this.currentUser = newUser;
+        this.isGuest = false;
+        localStorage.setItem('bruchsal_current_user', JSON.stringify(newUser));
+        
+        alert('Registration successful! Welcome to Bruchsal Quest!');
+        this.showMainMenu();
+        this.updateUserDisplay();
+    }
+    
+    loginAsGuest() {
+        this.currentUser = {
+            username: 'Guest',
+            bestScore: 0,
+            totalGames: 0,
+            isGuest: true
+        };
+        this.isGuest = true;
+        this.showMainMenu();
+        this.updateUserDisplay();
+    }
+    
+    logout() {
+        this.currentUser = null;
+        this.isGuest = false;
+        localStorage.removeItem('bruchsal_current_user');
+        this.showScreen('login');
+        this.clearFormInputs();
+    }
+    
+    showMainMenu() {
+        this.showScreen('start');
+        this.gameState = 'start';
+    }
+    
+    updateUserDisplay() {
+        if (this.currentUser) {
+            this.currentUserElement.textContent = this.currentUser.username;
+            this.userBestScore.textContent = this.currentUser.bestScore;
+            
+            // Hide logout button for guests
+            if (this.isGuest) {
+                this.logoutBtn.style.display = 'none';
+            } else {
+                this.logoutBtn.style.display = 'block';
+            }
+        }
+    }
+    
+    // ===== USER DATA MANAGEMENT =====
+    
+    getUsers() {
+        try {
+            const users = localStorage.getItem('bruchsal_users');
+            return users ? JSON.parse(users) : [];
+        } catch (e) {
+            console.error('Error parsing users:', e);
+            return [];
+        }
+    }
+    
+    saveUsers(users) {
+        localStorage.setItem('bruchsal_users', JSON.stringify(users));
+    }
+    
+    updateUserScore(newScore) {
+        if (!this.currentUser || this.isGuest) {
+            return false;
+        }
+        
+        const isNewRecord = newScore > this.currentUser.bestScore;
+        
+        if (isNewRecord) {
+            this.currentUser.bestScore = newScore;
+            this.currentUser.totalGames = (this.currentUser.totalGames || 0) + 1;
+            
+            // Update in localStorage
+            localStorage.setItem('bruchsal_current_user', JSON.stringify(this.currentUser));
+            
+            // Update in users list
+            const users = this.getUsers();
+            const userIndex = users.findIndex(u => u.username === this.currentUser.username);
+            if (userIndex !== -1) {
+                users[userIndex] = { ...this.currentUser };
+                this.saveUsers(users);
+            }
+            
+            this.updateUserDisplay();
+        }
+        
+        return isNewRecord;
+    }
+    
+    // ===== LEADERBOARD SYSTEM =====
+    
+    showLeaderboard() {
+        this.showScreen('leaderboard');
+        this.updateLeaderboard();
+    }
+    
+    updateLeaderboard() {
+        const users = this.getUsers()
+            .filter(user => user.bestScore > 0)
+            .sort((a, b) => b.bestScore - a.bestScore)
+            .slice(0, 10); // Top 10 players
+        
+        this.leaderboardList.innerHTML = '';
+        
+        if (users.length === 0) {
+            this.leaderboardList.innerHTML = '<div class="empty-leaderboard">No scores yet. Be the first to play!</div>';
+            this.userRank.textContent = '-';
+            this.totalPlayers.textContent = '0';
+            return;
+        }
+        
+        users.forEach((user, index) => {
+            const rank = index + 1;
+            const entry = document.createElement('div');
+            entry.className = 'leaderboard-entry';
+            
+            // Highlight current user
+            if (this.currentUser && user.username === this.currentUser.username) {
+                entry.classList.add('current-user');
+            }
+            
+            const rankElement = document.createElement('div');
+            rankElement.className = 'leaderboard-rank';
+            if (rank === 1) rankElement.classList.add('first');
+            else if (rank === 2) rankElement.classList.add('second');
+            else if (rank === 3) rankElement.classList.add('third');
+            
+            rankElement.textContent = `#${rank}`;
+            
+            const nameElement = document.createElement('div');
+            nameElement.className = 'leaderboard-name';
+            nameElement.textContent = user.username;
+            
+            const scoreElement = document.createElement('div');
+            scoreElement.className = 'leaderboard-score';
+            scoreElement.textContent = `${user.bestScore} XP`;
+            
+            entry.appendChild(rankElement);
+            entry.appendChild(nameElement);
+            entry.appendChild(scoreElement);
+            
+            this.leaderboardList.appendChild(entry);
+        });
+        
+        // Update user stats
+        this.totalPlayers.textContent = users.length;
+        
+        if (this.currentUser && !this.isGuest) {
+            const userRank = users.findIndex(u => u.username === this.currentUser.username) + 1;
+            this.userRank.textContent = userRank > 0 ? userRank : '-';
+        } else {
+            this.userRank.textContent = '-';
+        }
+    }
 }
 
 // Global variable for the game instance
