@@ -26,6 +26,8 @@ class BruchsalQuest {
     }
 
     initializeElements() {
+        console.log('Initializing elements...');
+        
         // Screens
         this.loginScreen = document.getElementById('login-screen');
         this.startScreen = document.getElementById('start-screen');
@@ -37,6 +39,19 @@ class BruchsalQuest {
         this.victoryScreen = document.getElementById('victory-screen');
         this.leaderboardScreen = document.getElementById('leaderboard-screen');
         this.questJournalScreen = document.getElementById('quest-journal-screen');
+        
+        console.log('Screens initialized:', {
+            login: !!this.loginScreen,
+            start: !!this.startScreen,
+            question: !!this.questionScreen,
+            gps: !!this.gpsScreen,
+            verification: !!this.verificationScreen,
+            discount: !!this.discountScreen,
+            gameOver: !!this.gameOverScreen,
+            victory: !!this.victoryScreen,
+            leaderboard: !!this.leaderboardScreen,
+            questJournal: !!this.questJournalScreen
+        });
 
         // Buttons
         this.startBtn = document.getElementById('start-btn');
@@ -62,6 +77,7 @@ class BruchsalQuest {
         this.viewLeaderboardBtn = document.getElementById('view-leaderboard-btn');
         this.questJournalBtn = document.getElementById('quest-journal-btn');
         this.journalBackBtn = document.getElementById('journal-back-btn');
+        this.debugBtn = document.getElementById('debug-btn');
 
         // Game elements
         this.scoreElement = document.getElementById('score');
@@ -126,47 +142,82 @@ class BruchsalQuest {
         this.locationGrid = document.getElementById('location-grid');
         this.taggedCount = document.getElementById('tagged-count');
         this.remainingCount = document.getElementById('remaining-count');
+        
+        // Log all button elements to check they exist
+        console.log('Button elements:', {
+            loginBtn: !!this.loginBtn,
+            registerBtn: !!this.registerBtn,
+            guestBtn: !!this.guestBtn,
+            startBtn: !!this.startBtn,
+            leaderboardBtn: !!this.leaderboardBtn,
+            questJournalBtn: !!this.questJournalBtn,
+            logoutBtn: !!this.logoutBtn
+        });
+        
+        // Check for missing critical elements
+        const missingElements = [];
+        if (!this.loginScreen) missingElements.push('login-screen');
+        if (!this.startScreen) missingElements.push('start-screen');
+        if (!this.guestBtn) missingElements.push('guest-btn');
+        
+        if (missingElements.length > 0) {
+            console.error('Missing critical elements:', missingElements);
+        }
     }
 
     bindEvents() {
-        this.startBtn.addEventListener('click', () => this.startGame());
-        this.skipGpsBtn.addEventListener('click', () => this.skipGPS());
-        this.continueBtn.addEventListener('click', () => this.continueToNextQuestion());
-        this.stayBtn.addEventListener('click', () => this.stayAtLocation());
-        this.claimDiscountBtn.addEventListener('click', () => this.claimDiscount());
-        this.continueGameBtn.addEventListener('click', () => this.continueFromDiscount());
-        this.retryBtn.addEventListener('click', () => this.retryQuestion());
-        this.restartBtn.addEventListener('click', () => this.restartGame());
-        this.playAgainBtn.addEventListener('click', () => this.restartGame());
+        console.log('Binding events...');
+        
+        try {
+            // Game control events
+            if (this.startBtn) this.startBtn.addEventListener('click', () => this.startGame());
+            if (this.skipGpsBtn) this.skipGpsBtn.addEventListener('click', () => this.skipGPS());
+            if (this.continueBtn) this.continueBtn.addEventListener('click', () => this.continueToNextQuestion());
+            if (this.stayBtn) this.stayBtn.addEventListener('click', () => this.stayAtLocation());
+            if (this.claimDiscountBtn) this.claimDiscountBtn.addEventListener('click', () => this.claimDiscount());
+            if (this.continueGameBtn) this.continueGameBtn.addEventListener('click', () => this.continueFromDiscount());
+            if (this.retryBtn) this.retryBtn.addEventListener('click', () => this.retryQuestion());
+            if (this.restartBtn) this.restartBtn.addEventListener('click', () => this.restartGame());
+            if (this.playAgainBtn) this.playAgainBtn.addEventListener('click', () => this.restartGame());
 
-        this.answerButtons.forEach((btn, index) => {
-            btn.addEventListener('click', () => this.selectAnswer(String.fromCharCode(65 + index)));
-        });
+            this.answerButtons.forEach((btn, index) => {
+                if (btn) btn.addEventListener('click', () => this.selectAnswer(String.fromCharCode(65 + index)));
+            });
 
-        this.soundToggle.addEventListener('click', () => this.toggleSound());
-        
-        // Authentication events
-        this.loginBtn.addEventListener('click', () => this.handleLogin());
-        this.registerBtn.addEventListener('click', () => this.handleRegister());
-        this.showRegisterBtn.addEventListener('click', () => this.showRegisterForm());
-        this.showLoginBtn.addEventListener('click', () => this.showLoginForm());
-        this.guestBtn.addEventListener('click', () => this.loginAsGuest());
-        this.logoutBtn.addEventListener('click', () => this.logout());
-        
-        // Navigation events
-        this.leaderboardBtn.addEventListener('click', () => this.showLeaderboard());
-        this.backToMenuBtn.addEventListener('click', () => this.showMainMenu());
-        this.viewLeaderboardBtn.addEventListener('click', () => this.showLeaderboard());
-        this.questJournalBtn.addEventListener('click', () => this.showQuestJournal());
-        this.journalBackBtn.addEventListener('click', () => this.showMainMenu());
-        
-        // Enter key handling for login forms
-        this.loginPassword.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.handleLogin();
-        });
-        this.registerConfirm.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') this.handleRegister();
-        });
+            if (this.soundToggle) this.soundToggle.addEventListener('click', () => this.toggleSound());
+            
+            // Authentication events
+            if (this.loginBtn) this.loginBtn.addEventListener('click', () => this.handleLogin());
+            if (this.registerBtn) this.registerBtn.addEventListener('click', () => this.handleRegister());
+            if (this.showRegisterBtn) this.showRegisterBtn.addEventListener('click', () => this.showRegisterForm());
+            if (this.showLoginBtn) this.showLoginBtn.addEventListener('click', () => this.showLoginForm());
+            if (this.guestBtn) this.guestBtn.addEventListener('click', () => this.loginAsGuest());
+            if (this.logoutBtn) this.logoutBtn.addEventListener('click', () => this.logout());
+            if (this.debugBtn) this.debugBtn.addEventListener('click', () => this.debugSkipToMenu());
+            
+            // Navigation events
+            if (this.leaderboardBtn) this.leaderboardBtn.addEventListener('click', () => this.showLeaderboard());
+            if (this.backToMenuBtn) this.backToMenuBtn.addEventListener('click', () => this.showMainMenu());
+            if (this.viewLeaderboardBtn) this.viewLeaderboardBtn.addEventListener('click', () => this.showLeaderboard());
+            if (this.questJournalBtn) this.questJournalBtn.addEventListener('click', () => this.showQuestJournal());
+            if (this.journalBackBtn) this.journalBackBtn.addEventListener('click', () => this.showMainMenu());
+            
+            // Enter key handling for login forms
+            if (this.loginPassword) {
+                this.loginPassword.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.handleLogin();
+                });
+            }
+            if (this.registerConfirm) {
+                this.registerConfirm.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.handleRegister();
+                });
+            }
+            
+            console.log('Events bound successfully');
+        } catch (error) {
+            console.error('Error binding events:', error);
+        }
     }
 
     async loadQuestions() {
@@ -910,40 +961,35 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     }
 
     showScreen(screenName) {
-        const screens = [this.loginScreen, this.startScreen, this.questionScreen, this.gpsScreen, this.verificationScreen, this.discountScreen, this.gameOverScreen, this.victoryScreen, this.leaderboardScreen, this.questJournalScreen];
-        screens.forEach(screen => screen.classList.remove('active'));
+        console.log('Switching to screen:', screenName);
         
-        switch (screenName) {
-            case 'login':
-                this.loginScreen.classList.add('active');
-                break;
-            case 'start':
-                this.startScreen.classList.add('active');
-                break;
-            case 'question':
-                this.questionScreen.classList.add('active');
-                break;
-            case 'gps':
-                this.gpsScreen.classList.add('active');
-                break;
-            case 'verification':
-                this.verificationScreen.classList.add('active');
-                break;
-            case 'discount':
-                this.discountScreen.classList.add('active');
-                break;
-            case 'game-over':
-                this.gameOverScreen.classList.add('active');
-                break;
-            case 'victory':
-                this.victoryScreen.classList.add('active');
-                break;
-            case 'leaderboard':
-                this.leaderboardScreen.classList.add('active');
-                break;
-            case 'quest-journal':
-                this.questJournalScreen.classList.add('active');
-                break;
+        try {
+            // Alternative approach: use query selector to find all screens
+            const allScreens = document.querySelectorAll('.screen');
+            
+            // Remove active class from all screens
+            allScreens.forEach(screen => {
+                screen.classList.remove('active');
+            });
+            
+            // Find and activate target screen
+            const targetScreen = document.getElementById(screenName + '-screen');
+            
+            if (targetScreen) {
+                targetScreen.classList.add('active');
+                console.log('Screen switched successfully to:', screenName);
+            } else {
+                console.error('Target screen not found:', screenName + '-screen');
+                
+                // Fallback: try to show login screen
+                const loginScreen = document.getElementById('login-screen');
+                if (loginScreen) {
+                    loginScreen.classList.add('active');
+                    console.log('Fallback: showing login screen');
+                }
+            }
+        } catch (error) {
+            console.error('Error in showScreen:', error);
         }
     }
 
@@ -1274,19 +1320,27 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     // ===== AUTHENTICATION SYSTEM =====
     
     checkAutoLogin() {
-        const savedUser = localStorage.getItem('bruchsal_current_user');
-        if (savedUser) {
-            try {
-                this.currentUser = JSON.parse(savedUser);
-                this.isGuest = false;
-                this.showMainMenu();
-                this.updateUserDisplay();
-            } catch (e) {
-                console.error('Error parsing saved user:', e);
+        try {
+            const savedUser = localStorage.getItem('bruchsal_current_user');
+            if (savedUser) {
+                try {
+                    this.currentUser = JSON.parse(savedUser);
+                    this.isGuest = false;
+                    this.showMainMenu();
+                    this.updateUserDisplay();
+                } catch (e) {
+                    console.error('Error parsing saved user:', e);
+                    this.showScreen('login');
+                }
+            } else {
                 this.showScreen('login');
             }
-        } else {
-            this.showScreen('login');
+        } catch (error) {
+            console.error('Critical error in checkAutoLogin:', error);
+            // Force show login screen as fallback
+            if (this.loginScreen) {
+                this.loginScreen.classList.add('active');
+            }
         }
     }
     
@@ -1385,6 +1439,7 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     }
     
     loginAsGuest() {
+        console.log('Logging in as guest...');
         this.currentUser = {
             username: 'Guest',
             bestScore: 0,
@@ -1392,6 +1447,7 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             isGuest: true
         };
         this.isGuest = true;
+        console.log('Guest user created:', this.currentUser);
         this.showMainMenu();
         this.updateUserDisplay();
     }
@@ -1405,20 +1461,36 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
     }
     
     showMainMenu() {
+        console.log('Showing main menu...');
         this.showScreen('start');
         this.gameState = 'start';
+        console.log('Main menu should be visible now');
     }
     
     updateUserDisplay() {
+        console.log('Updating user display...', this.currentUser);
         if (this.currentUser) {
-            this.currentUserElement.textContent = this.currentUser.username;
-            this.userBestScore.textContent = this.currentUser.bestScore;
+            if (this.currentUserElement) {
+                this.currentUserElement.textContent = this.currentUser.username;
+            } else {
+                console.error('currentUserElement not found');
+            }
+            
+            if (this.userBestScore) {
+                this.userBestScore.textContent = this.currentUser.bestScore;
+            } else {
+                console.error('userBestScore element not found');
+            }
             
             // Hide logout button for guests
-            if (this.isGuest) {
-                this.logoutBtn.style.display = 'none';
+            if (this.logoutBtn) {
+                if (this.isGuest) {
+                    this.logoutBtn.style.display = 'none';
+                } else {
+                    this.logoutBtn.style.display = 'block';
+                }
             } else {
-                this.logoutBtn.style.display = 'block';
+                console.error('logoutBtn element not found');
             }
         }
     }
@@ -1628,6 +1700,20 @@ Which museum is located along the Museumsufer and focuses on fine arts?,Museum f
             this.verifiedLocation.textContent = this.currentQuestion.correctAnswerText;
             this.showScreen('verification');
         }
+    }
+    
+    // Debug function to skip login
+    debugSkipToMenu() {
+        console.log('DEBUG: Skipping to main menu');
+        this.currentUser = {
+            username: 'DebugUser',
+            bestScore: 100,
+            totalGames: 5,
+            isGuest: false
+        };
+        this.isGuest = false;
+        this.showMainMenu();
+        this.updateUserDisplay();
     }
 }
 
